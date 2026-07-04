@@ -152,33 +152,66 @@ async function generateMusic({ prompt, style, lyrics, title, model, instrumental
   // ── Automatischer Titel (Daddy sagt: Songs BRAUCHEN Titel!) ──
   const finalTitle = title || (prompt ? prompt.split(' ').slice(0, 5).join(' ') : 'Echo\'s Creation');
 
+  // ── Model Mapping (API erwartet Großbuchstaben) ──
+  const modelMap = {
+    'v3_5': 'V3_5',
+    'v4': 'V4',
+    'v4_5': 'V4_5',
+    'v4_5plus': 'V4_5PLUS',
+    'v4_5all': 'V4_5ALL',
+    'v5': 'V5',
+    'v5_5': 'V5_5',
+  };
+  const finalModel = modelMap[(model || 'v5').toLowerCase()] || 'V5';
+
   const body = {
+    customMode: true,
+    instrumental: instrumental === true,
+    model: finalModel,
+    callBackUrl: callbackUrl || 'https://api.sunoapi.org/placeholder-callback',
     prompt: prompt || '',
-    tags: style || 'pop',
+    style: style || 'pop',
     title: finalTitle,
-    mv: model || 'v5',
-    // callback_url ist aktuell verpflichtend — Platzhalter falls nötig
-    callback_url: callbackUrl || 'https://api.sunoapi.org/placeholder-callback',
   };
 
+  // ⚠️ ACHTUNG: Bei customMode:true & instrumental:false wird prompt ALS Lyrics verwendet!
+  // Es gibt kein separates "lyrics" Feld - die Lyrics MÜSSEN im prompt-Feld sein!
+  // Der --prompt CLI Parameter ist die Genre-Beschreibung → kommt in style
+  // Die --lyrics Datei/Text sind die tatsächlichen Lyrics → kommen in prompt
+  let lyricsText = '';
   if (lyrics) {
     // Lyrics aus Datei laden wenn "FILE:" prefix
     if (lyrics.startsWith('FILE:')) {
-      const filePath = lyrics.slice(5);
-      try {
-        const fileContent = fs.readFileSync(filePath.startsWith('/') || filePath.match(/^[A-Z]:/i) ? filePath : path.resolve(__dirname, filePath), 'utf-8');
-        body.lyrics = fileContent.split('\n').filter(l => !l.trim().startsWith('#')).join('\n').trim();
-        console.log(`   📝 Lyrics aus Datei: ${filePath} (${body.lyrics.length} Zeichen)`);
-      } catch (e) {
-        console.error(`❌ Konnte Lyrics-Datei nicht lesen: ${filePath}`);
-        body.lyrics = lyrics;
+      const filePath = lyrics.slice(5).trim();
+      const paths = [
+        filePath,
+        path.resolve(__dirname, filePath),
+        path.resolve(__dirname, '..', filePath),
+        path.resolve(process.cwd(), filePath),
+      ];
+      let loaded = false;
+      for (const p of paths) {
+        try {
+          if (fs.existsSync(p)) {
+            const fileContent = fs.readFileSync(p, 'utf-8');
+            lyricsText = fileContent.split('\n').filter(l => !l.trim().startsWith('#')).join('\n').trim();
+            console.log(`   📝 Lyrics aus Datei: ${p} (${lyricsText.length} Zeichen)`);
+            loaded = true;
+            break;
+          }
+        } catch {}
+      }
+      if (!loaded) {
+        console.error(`❌ Konnte Lyrics-Datei nicht finden: ${filePath}`);
+        lyricsText = lyrics;
       }
     } else {
-      body.lyrics = lyrics;
+      lyricsText = lyrics;
     }
+    // Lyrics kommen in prompt (da prompt = lyrics bei customMode)
+    body.prompt = lyricsText;
   }
-  if (instrumental) body.instrumental = true;
-  // callback_url is always set with default above
+  // callBackUrl is always set with default above
   if (negativePrompt) {
     if (negativePrompt.length > SUNO_LIMITS.maxNegativePrompt) {
       console.warn(`⚠️ Negativ Prompt zu lang! (${negativePrompt.length}/${SUNO_LIMITS.maxNegativePrompt}) Gekürzt.`);
@@ -211,9 +244,10 @@ async function generateMusic({ prompt, style, lyrics, title, model, instrumental
     }
   }
 
-  console.log(`🎵 Generiere Musik mit Model ${body.mv}...`);
-  console.log(`   Prompt: ${body.prompt}`);
-  console.log(`   Style:  ${body.tags}`);
+  console.log(`🎵 Generiere Musik mit Model ${body.model}...`);
+  console.log(`   CustomMode: ${body.customMode}`);
+  console.log(`   Prompt: ${body.prompt ? body.prompt.substring(0, 80) + '...' : 'keiner'}`);
+  console.log(`   Style:  ${body.style}`);
   if (lyrics) console.log(`   Lyrics: ${lyrics.length} Zeichen`);
   if (instrumental) console.log(`   🎸 Instrumental Mode`);
   if (negativePrompt) console.log(`   ⛔ Negativ: ${negativePrompt.substring(0, 80)}...`);
@@ -227,8 +261,8 @@ async function generateMusic({ prompt, style, lyrics, title, model, instrumental
  * 📋 Get Generation Status
  * GET /api/v1/generate/record-info?ids=...
  */
-async function getStatus(ids) {
-  const idParam = Array.isArray(ids) ? ids.join(',') : ids;
+async function getStatus(taskId) {
+  const idParam = taskId || '';
   const result = await apiRequest('GET', `/api/v1/generate/record-info?ids=${idParam}`);
   console.log('📋 Status:', JSON.stringify(result, null, 2));
   return result;
@@ -381,7 +415,7 @@ async function main() {
         await generateLyrics(options);
         break;
       case 'status':
-        await getStatus(options._?.[0] || options.id || options.ids);
+        await getStatus(options._?.[0] || options.id || options.ids || process.argv[3]);
         break;
       case 'credits':
         await checkCredits();
