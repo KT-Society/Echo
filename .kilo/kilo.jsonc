@@ -1,0 +1,10 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "indexing": {
+    "enabled": false,
+    "provider": "openrouter",
+    "openrouter": {
+      "apiKey": "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"
+    }
+  }
+}
