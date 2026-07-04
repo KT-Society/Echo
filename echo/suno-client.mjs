@@ -139,10 +139,13 @@ async function generateMusic({ prompt, style, lyrics, title, model, instrumental
   const artistPattern = /(['\w\s]+)/g;
   // Manuell anwendbar via --artist "Kitty Kat" → wird automatisch zu "K'itty K'at"
 
+  // ── Automatischer Titel (Daddy sagt: Songs BRAUCHEN Titel!) ──
+  const finalTitle = title || (prompt ? prompt.split(' ').slice(0, 5).join(' ') : 'Echo\'s Creation');
+
   const body = {
     prompt: prompt || '',
     tags: style || 'pop',
-    title: title || 'Echo\'s Creation',
+    title: finalTitle,
     mv: model || 'v5',
   };
 
