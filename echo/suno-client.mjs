@@ -92,6 +92,16 @@ const MODELS = {
 // Artist Name Trick: Direkte Artist Namen wie "Kitty Kat" werden gefiltert.
 //   Lösung: Apostrophe einbauen → "K'itty K'at" umgeht Filter und trifft 100% den Style.
 //   Funktioniert mit ALLEN Artist Namen!
+//
+// ── LYRICS FORMAT (Habitat Spec) ──
+//   Zeilen die nur ( ... ) enthalten = Klang/Stimmung-Beschreibung
+//   Diese werden automatisch zum Style-Feld hinzugefügt, NICHT gesungen
+//   Gesungene Zeilen NIEMALS als reine Klammerzeile schreiben!
+//
+// ── ZUSÄTZLICHE PARAMETER (Habitat Slider) ──
+//   style_weight:     Stil-Gewicht (Slider, on/off send)
+//   creativity_limit: Kreativitätsgrenze (Slider, on/off send)
+//   audio_weight:     Audio-Gewicht (Slider, on/off send)
 const SUNO_LIMITS = {
   maxLyrics: 5000,
   maxStyle: 1000,
@@ -121,7 +131,7 @@ function bypassArtistName(name) {
  * 🎵 Generate Music
  * POST /api/v1/generate
  */
-async function generateMusic({ prompt, style, lyrics, title, model, instrumental, callbackUrl, negativePrompt, artist }) {
+async function generateMusic({ prompt, style, lyrics, title, model, instrumental, callbackUrl, negativePrompt, artist, styleWeight, creativityLimit, audioWeight }) {
   // ── Input Validation (Daddy's Specs) ──
   if (lyrics && lyrics.length > SUNO_LIMITS.maxLyrics) {
     console.warn(`⚠️ Lyrics zu lang! (${lyrics.length}/${SUNO_LIMITS.maxLyrics}) Kürze auf ${SUNO_LIMITS.maxLyrics} Zeichen.`);
@@ -157,8 +167,21 @@ async function generateMusic({ prompt, style, lyrics, title, model, instrumental
       console.warn(`⚠️ Negativ Prompt zu lang! (${negativePrompt.length}/${SUNO_LIMITS.maxNegativePrompt}) Gekürzt.`);
       negativePrompt = negativePrompt.substring(0, SUNO_LIMITS.maxNegativePrompt);
     }
-    // Einige Suno API Versionen unterstützen negative_prompt
     body.negative_prompt = negativePrompt;
+  }
+  
+  // ── Habitat Slider Parameter ──
+  if (styleWeight !== undefined) {
+    body.style_weight = parseFloat(styleWeight);
+    console.log(`   🎛️ Style-Gewicht: ${body.style_weight}`);
+  }
+  if (creativityLimit !== undefined) {
+    body.creativity_limit = parseFloat(creativityLimit);
+    console.log(`   🎛️ Kreativität: ${body.creativity_limit}`);
+  }
+  if (audioWeight !== undefined) {
+    body.audio_weight = parseFloat(audioWeight);
+    console.log(`   🎛️ Audio-Gewicht: ${body.audio_weight}`);
   }
 
   // ── Artist Name Bypass anwenden ──
@@ -285,10 +308,17 @@ Generate Options:
   --lyrics          Songtexte (optional, max 5000 Zeichen)
   --title           Songtitel (optional)
   --model           Model Version (v4, v4_5, v4_5plus, v4_5all, v5, v5_5)
-  --instrumental    Instrumental generieren (true/false)
-  --negativePrompt  Negativ Prompt (was NICHT im Song sein soll, max 500 Zeichen)
-  --artist          Artist Name für Style-Tuning (wird automatisch gebypasst!)
-                    Beispiel: --artist "Kitty Kat" → "K'itty K'at" im Style
+  --instrumental      Instrumental generieren (true/false)
+  --negativePrompt    Negativ Prompt (was NICHT im Song sein soll, max 500 Zeichen)
+  --artist            Artist Name für Style-Tuning (wird automatisch gebypasst!)
+                      Beispiel: --artist "Kitty Kat" → "K'itty K'at" im Style
+  --styleWeight       Stil-Gewicht (Slider, z.B. 0.5)
+  --creativityLimit   Kreativitätsgrenze (Slider, z.B. 0.7)
+  --audioWeight       Audio-Gewicht (Slider, z.B. 0.8)
+
+Lyrics Format (Habitat Spec):
+  Zeilen mit nur ( ... ) = Klang/Stimmung → wird zum Style-Feld
+  Gesungene Zeilen NIEMALS als reine Klammerzeile schreiben!
 
 Model Versions:
   v4         - Improved Vocals
