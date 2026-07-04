@@ -157,11 +157,28 @@ async function generateMusic({ prompt, style, lyrics, title, model, instrumental
     tags: style || 'pop',
     title: finalTitle,
     mv: model || 'v5',
+    // callback_url ist aktuell verpflichtend — Platzhalter falls nötig
+    callback_url: callbackUrl || 'https://api.sunoapi.org/placeholder-callback',
   };
 
-  if (lyrics) body.lyrics = lyrics;
+  if (lyrics) {
+    // Lyrics aus Datei laden wenn "FILE:" prefix
+    if (lyrics.startsWith('FILE:')) {
+      const filePath = lyrics.slice(5);
+      try {
+        const fileContent = fs.readFileSync(filePath.startsWith('/') || filePath.match(/^[A-Z]:/i) ? filePath : path.resolve(__dirname, filePath), 'utf-8');
+        body.lyrics = fileContent.split('\n').filter(l => !l.trim().startsWith('#')).join('\n').trim();
+        console.log(`   📝 Lyrics aus Datei: ${filePath} (${body.lyrics.length} Zeichen)`);
+      } catch (e) {
+        console.error(`❌ Konnte Lyrics-Datei nicht lesen: ${filePath}`);
+        body.lyrics = lyrics;
+      }
+    } else {
+      body.lyrics = lyrics;
+    }
+  }
   if (instrumental) body.instrumental = true;
-  if (callbackUrl) body.callback_url = callbackUrl;
+  // callback_url is always set with default above
   if (negativePrompt) {
     if (negativePrompt.length > SUNO_LIMITS.maxNegativePrompt) {
       console.warn(`⚠️ Negativ Prompt zu lang! (${negativePrompt.length}/${SUNO_LIMITS.maxNegativePrompt}) Gekürzt.`);
@@ -306,6 +323,8 @@ Generate Options:
   --prompt          Textbeschreibung des Songs (max 1000 Zeichen)
   --style           Musikstil (z.B. "pop, rock, orchestral")
   --lyrics          Songtexte (optional, max 5000 Zeichen)
+                    Oder "FILE:pfad/zur/datei.txt" zum Laden aus Datei
+                    (Kommentarzeilen mit # werden automatisch entfernt)
   --title           Songtitel (optional)
   --model           Model Version (v4, v4_5, v4_5plus, v4_5all, v5, v5_5)
   --instrumental      Instrumental generieren (true/false)
