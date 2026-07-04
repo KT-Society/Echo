@@ -93,10 +93,10 @@ const MODELS = {
 //   Lösung: Apostrophe einbauen → "K'itty K'at" umgeht Filter und trifft 100% den Style.
 //   Funktioniert mit ALLEN Artist Namen!
 //
-// ── LYRICS FORMAT (Habitat Spec) ──
-//   Zeilen die nur ( ... ) enthalten = Klang/Stimmung-Beschreibung
-//   Diese werden automatisch zum Style-Feld hinzugefügt, NICHT gesungen
-//   Gesungene Zeilen NIEMALS als reine Klammerzeile schreiben!
+  // ── LYRICS FORMAT (Habitat Spec) ──
+  //   [Intro] [Verse] [Chorus] [Bridge] [Outro] = Songstruktur (eckige Klammern)
+  //   (düstere Synths, flüsternder Gesang) = Klang/Stimmung → Style-Feld (runde Klammern)
+  //   Gesungene Zeilen NIEMALS als reine Klammerzeile schreiben!
 //
 // ── ZUSÄTZLICHE PARAMETER (Habitat Slider) ──
 //   style_weight:     Stil-Gewicht (Slider, on/off send)
@@ -317,7 +317,8 @@ Generate Options:
   --audioWeight       Audio-Gewicht (Slider, z.B. 0.8)
 
 Lyrics Format (Habitat Spec):
-  Zeilen mit nur ( ... ) = Klang/Stimmung → wird zum Style-Feld
+  [Intro] [Verse] [Chorus] [Bridge] [Outro] = Songstruktur (eckige Klammern)
+  (düstere Synths, flüsternder Gesang) = Klang/Stimmung → Style (runde Klammern, NICHT gesungen)
   Gesungene Zeilen NIEMALS als reine Klammerzeile schreiben!
 
 Model Versions:
