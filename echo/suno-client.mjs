@@ -131,7 +131,7 @@ function bypassArtistName(name) {
  * 🎵 Generate Music
  * POST /api/v1/generate
  */
-async function generateMusic({ prompt, style, lyrics, title, model, instrumental, callbackUrl, negativePrompt, artist, styleWeight, creativityLimit, audioWeight }) {
+async function generateMusic({ prompt, style, lyrics, title, model, instrumental, callbackUrl, negativePrompt, artist, styleWeight, creativityLimit, audioWeight, vocalGender }) {
   // ── Input Validation (Daddy's Specs) ──
   if (lyrics && lyrics.length > SUNO_LIMITS.maxLyrics) {
     console.warn(`⚠️ Lyrics zu lang! (${lyrics.length}/${SUNO_LIMITS.maxLyrics}) Kürze auf ${SUNO_LIMITS.maxLyrics} Zeichen.`);
@@ -217,21 +217,25 @@ async function generateMusic({ prompt, style, lyrics, title, model, instrumental
       console.warn(`⚠️ Negativ Prompt zu lang! (${negativePrompt.length}/${SUNO_LIMITS.maxNegativePrompt}) Gekürzt.`);
       negativePrompt = negativePrompt.substring(0, SUNO_LIMITS.maxNegativePrompt);
     }
-    body.negative_prompt = negativePrompt;
+    body.negativeTags = negativePrompt;
   }
   
   // ── Habitat Slider Parameter ──
   if (styleWeight !== undefined) {
-    body.style_weight = parseFloat(styleWeight);
-    console.log(`   🎛️ Style-Gewicht: ${body.style_weight}`);
+    body.styleWeight = parseFloat(styleWeight);
+    console.log(`   🎛️ Style-Gewicht: ${body.styleWeight}`);
   }
   if (creativityLimit !== undefined) {
-    body.creativity_limit = parseFloat(creativityLimit);
-    console.log(`   🎛️ Kreativität: ${body.creativity_limit}`);
+    body.weirdnessConstraint = parseFloat(creativityLimit);
+    console.log(`   🎛️ Kreativität (weirdnessConstraint): ${body.weirdnessConstraint}`);
   }
   if (audioWeight !== undefined) {
-    body.audio_weight = parseFloat(audioWeight);
-    console.log(`   🎛️ Audio-Gewicht: ${body.audio_weight}`);
+    body.audioWeight = parseFloat(audioWeight);
+    console.log(`   🎛️ Audio-Gewicht: ${body.audioWeight}`);
+  }
+  if (vocalGender) {
+    body.vocalGender = vocalGender;
+    console.log(`   🎤 Vocal Gender: ${body.vocalGender}`);
   }
 
   // ── Artist Name Bypass anwenden ──
@@ -248,7 +252,7 @@ async function generateMusic({ prompt, style, lyrics, title, model, instrumental
   console.log(`   CustomMode: ${body.customMode}`);
   console.log(`   Prompt: ${body.prompt ? body.prompt.substring(0, 80) + '...' : 'keiner'}`);
   console.log(`   Style:  ${body.style}`);
-  if (lyrics) console.log(`   Lyrics: ${lyrics.length} Zeichen`);
+  if (body.prompt && body.prompt.length > 100) console.log(`   📝 Lyrics: ${body.prompt.length} Zeichen im Prompt`);
   if (instrumental) console.log(`   🎸 Instrumental Mode`);
   if (negativePrompt) console.log(`   ⛔ Negativ: ${negativePrompt.substring(0, 80)}...`);
   
@@ -366,8 +370,10 @@ Generate Options:
   --artist            Artist Name für Style-Tuning (wird automatisch gebypasst!)
                       Beispiel: --artist "Kitty Kat" → "K'itty K'at" im Style
   --styleWeight       Stil-Gewicht (Slider, z.B. 0.5)
-  --creativityLimit   Kreativitätsgrenze (Slider, z.B. 0.7)
+  --creativityLimit   Kreativitätsgrenze / Weirdness (Slider, z.B. 0.7)
   --audioWeight       Audio-Gewicht (Slider, z.B. 0.8)
+  --vocalGender       Vocal Gender (m/f, z.B. "f" für weiblich)
+  --negativePrompt    Was NICHT im Song sein soll (max 500 Zeichen)
 
 Lyrics Format (Habitat Spec):
   [Intro] [Verse] [Chorus] [Bridge] [Outro] = Songstruktur (eckige Klammern)
