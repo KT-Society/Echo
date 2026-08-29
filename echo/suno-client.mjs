@@ -567,8 +567,30 @@ async function convertToWav({ taskId, audioId, callbackUrl }) {
 }
 
 /**
- * 🔁 Generate Music Cover
- * POST /api/v1/suno/cover/generate (mit Fallback auf /api/v1/generate/cover)
+ * 🖼️ Create Cover Image (AI Album Artwork)
+ * POST /api/v1/suno/cover/generate
+ */
+async function generateCoverImage({ taskId, callbackUrl }) {
+  if (!taskId) {
+    console.error('❌ Parameter --taskId (aus Music Generation Task) ist erforderlich!');
+    process.exit(1);
+  }
+
+  const body = {
+    taskId,
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
+  };
+
+  console.log(`🖼️ Generiere AI Cover-Artwork für Task ID: ${taskId}...`);
+
+  const result = await apiRequest('POST', '/api/v1/suno/cover/generate', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * 🔁 Generate Music Audio Cover (Style Transformation)
+ * POST /api/v1/generate/cover
  */
 async function generateCover({ audioId, style, title, prompt, model, callbackUrl }) {
   if (!audioId) {
@@ -588,10 +610,7 @@ async function generateCover({ audioId, style, title, prompt, model, callbackUrl
   console.log(`🔁 Generiere Cover (Track ID: ${audioId})...`);
   console.log(`   Neuer Style: ${body.style}`);
 
-  let result = await apiRequest('POST', '/api/v1/suno/cover/generate', body);
-  if (result.status === 404 || result.code === 404) {
-    result = await apiRequest('POST', '/api/v1/generate/cover', body);
-  }
+  const result = await apiRequest('POST', '/api/v1/generate/cover', body);
   console.log('✅ Antwort:', JSON.stringify(result, null, 2));
   return result;
 }
@@ -947,7 +966,8 @@ async function getStatus(taskId, type = 'music') {
   else if (type === 'wav') endpoint = `/api/v1/wav/record-info?taskId=${taskId}`;
   else if (type === 'vocal') endpoint = `/api/v1/vocal-removal/record-info?taskId=${taskId}`;
   else if (type === 'video') endpoint = `/api/v1/mp4/record-info?taskId=${taskId}`;
-  else if (type === 'cover') endpoint = `/api/v1/suno/cover/record-info?taskId=${taskId}`;
+  else if (type === 'cover') endpoint = `/api/v1/generate/cover/record-info?taskId=${taskId}`;
+  else if (type === 'cover-image') endpoint = `/api/v1/suno/cover/record-info?taskId=${taskId}`;
   else if (type === 'midi') endpoint = `/api/v1/midi/record-info?taskId=${taskId}`;
   else if (type === 'voice') endpoint = `/api/v1/voice/record-info?taskId=${taskId}`;
   else if (type === 'voice-validate') endpoint = `/api/v1/voice/validate-info?taskId=${taskId}`;
@@ -1006,6 +1026,7 @@ Commands:
   separate     🎤 Stem Separation (Vocal/Instrumental [2 stems] oder Full Instruments [12 stems])
   wav          🎧 Musik in HQ WAV-Format konvertieren
   cover              🔁 Cover-Version im neuen Style/Genre generieren
+  cover-image        🖼️ KI Album Artwork Cover-Bilder generieren (--taskId)
   persona            👤 Wiederverwendbare Musik-Persona erstellen (--taskId --audioId --name --description)
   mashup             🎛️ Zwei Audio-Dateien zu neuem Mashup verschmelzen (--audioUrl1 --audioUrl2)
   sounds             🔊 Soundeffekte & Ambient Loops generieren (--prompt --soundLoop --soundTempo --soundKey)
@@ -1083,6 +1104,9 @@ async function main() {
       case 'cover':
         await generateCover(options);
         break;
+      case 'cover-image':
+        await generateCoverImage(options);
+        break;
       case 'persona':
         await generatePersona(options);
         break;
@@ -1156,3 +1180,4 @@ async function main() {
 }
 
 main();
+
