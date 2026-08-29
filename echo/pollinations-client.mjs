@@ -515,7 +515,7 @@ export async function generateAudioGet({ text, model, voice, safe, outFile }) {
   }
 
   const selectedModel = model || 'grok-tts';
-  const selectedVoice = voice || 'liora';
+  const selectedVoice = voice || 'iris';
 
   const queryParams = new URLSearchParams();
   queryParams.append('model', selectedModel);
