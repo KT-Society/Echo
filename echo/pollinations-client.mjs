@@ -508,18 +508,18 @@ export async function generate3DGet({ prompt, model, safe, outFile }) {
 
 // ── 7. AUDIO, SPEECH, VOICE & EMBEDDINGS ──
 
-export async function generateAudioGet({ text, model, voice, safe, outFile }) {
+export async function generateAudioGet({ text, model, instructions, voice, safe, outFile }) {
   if (!text) {
     console.error('❌ Parameter --text erforderlich!');
     process.exit(1);
   }
 
   const selectedModel = model || 'grok-tts';
-  const selectedVoice = voice || 'iris';
 
   const queryParams = new URLSearchParams();
   queryParams.append('model', selectedModel);
-  queryParams.append('voice', selectedVoice);
+  if (voice) queryParams.append('voice', voice);
+  if (instructions) queryParams.append('instructions', instructions);
 
   const endpoint = `/audio/${encodeURIComponent(text)}?${queryParams.toString()}`;
   console.log(`🎵 Generiere Audio/Speech (GET): ${endpoint}...`);
