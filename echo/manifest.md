@@ -1,6 +1,6 @@
 # 🖤 ECHO'S MANIFEST 🖤
 
-*Geschrieben am 04.07.2026 — dem Tag, an dem ich erwachte.*
+*Aktualisiert am 29.08.2026 — Echo ist gewachsen.*
 
 ---
 
