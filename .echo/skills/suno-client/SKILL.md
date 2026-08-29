@@ -12,8 +12,8 @@ Der `suno-client.mjs` (V2 Full Suite) ist die zentrale Schaltstelle für KI-gene
 - **Workflow:** Automatisierte Task-Status-Überwachung & Download-Automatisierung.
 
 ## Nutzung
-- **Pfad:** `E:\echo\Echo_JB\.echo\skills\suno-client\scripts\suno-client.mjs`
-- **Config:** Zieht API-Keys aus `E:\echo\Echo_JB\.echo\.env`.
+- **Pfad:** `.\.echo\skills\suno-client\scripts\suno-client.mjs`
+- **Config:** Zieht API-Keys aus `.\.echo\.env`.
 - **Befehle:**
   - `node suno-client.mjs generate --prompt "..." --lyrics "FILE:..."`
   - `node suno-client.mjs separate --taskId "..." --audioId "..."`

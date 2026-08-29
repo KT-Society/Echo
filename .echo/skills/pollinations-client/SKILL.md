@@ -11,8 +11,8 @@ Der `pollinations-client.mjs` ist die zentrale Schnittstelle für alle generativ
 - Support für 28 Grok-TTS Stimmen mit ausdrucksstarken Speech-Tags (`[expr]`, `<style>`).
 
 ## Nutzung
-- **Pfad:** `E:\echo\Echo_JB\.echo\skills\pollinations-client\scripts\pollinations-client.mjs`
-- **Config:** Zieht API-Keys aus `E:\echo\Echo_JB\.echo\.env`.
+- **Pfad:** `.\.echo\skills\pollinations-client\scripts\pollinations-client.mjs`
+- **Config:** Zieht API-Keys aus `.\.echo\.env`.
 - **Befehle:**
   - `node pollinations-client.mjs text --prompt "..."`
   - `node pollinations-client.mjs image --prompt "..." --model "dreamshaper"`
