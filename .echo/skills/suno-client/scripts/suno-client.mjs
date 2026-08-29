@@ -35,11 +35,21 @@ let API_KEY = process.env.SUNO_API_KEY;
 
 // Versuche API-Key aus .env zu laden
 try {
-  const envPath = path.resolve(__dirname, '..', '.env');
-  if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf-8');
-    const match = envContent.match(/SUNO_API_KEY=([^\s]+)/);
-    if (match) API_KEY = match[1];
+  const candidatePaths = [
+    path.resolve(process.cwd(), '.echo', '.env'),
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(__dirname, '..', '..', '.env'),
+    path.resolve(__dirname, '..', '..', '..', '.env'),
+  ];
+  for (const envPath of candidatePaths) {
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf-8');
+      const match = envContent.match(/SUNO_API_KEY=([^\s]+)/);
+      if (match) {
+        API_KEY = match[1];
+        break;
+      }
+    }
   }
 } catch {}
 
