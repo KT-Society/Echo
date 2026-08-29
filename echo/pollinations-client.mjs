@@ -12,7 +12,7 @@
  * Nutzung:
  *   node pollinations-client.mjs text --prompt "Hallo Echo" --model "openai"
  *   node pollinations-client.mjs image --prompt "Cyberpunk Neon City" --model "zimage"
- *   node pollinations-client.mjs speech --input "Hallo Welt" --voice "alloy"
+ *   node pollinations-client.mjs speech --input "Hallo Welt" --voice "liora"
  *   node pollinations-client.mjs account-profile
  *   node pollinations-client.mjs models
  *   node pollinations-client.mjs help
@@ -515,7 +515,7 @@ export async function generateAudioGet({ text, model, voice, safe, outFile }) {
   }
 
   const selectedModel = model || 'grok-tts';
-  const selectedVoice = voice || 'alloy';
+  const selectedVoice = voice || 'liora';
 
   const queryParams = new URLSearchParams();
   queryParams.append('model', selectedModel);
@@ -720,7 +720,7 @@ Models & Realtime Commands:
 Examples:
   node pollinations-client.mjs text --prompt "Erkläre Quantencomputing in 2 Sätzen"
   node pollinations-client.mjs image --prompt "Futuristic Cyberpunk Neon Cathedral" --model "zimage"
-  node pollinations-client.mjs speech --input "Willkommen bei Echo Forge!" --voice "alloy"
+  node pollinations-client.mjs speech --input "Willkommen bei Echo Forge!" --voice "liora"
   node pollinations-client.mjs account-profile
   node pollinations-client.mjs models-status
 `);

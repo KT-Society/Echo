@@ -1,9 +1,68 @@
-# Endpoint: /v1/audio/speech\n\n## Method: POST\n\n**Summary:** Generate Audio (OpenAI-compatible)\n\n**Description:** Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.
+# Endpoint: /v1/audio/speech
+## Method: POST
+**Summary:** Generate Audio (OpenAI-compatible)
+**Description:** Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.
 
-Set `model` to `elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.
+Set `model` to `elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. `grok-tts` is the recommended model for high-quality expression.
 
-For multi-speaker audio, set `model` to `eleven-dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.
+---
 
-**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d, af_alloy, af_aoede, af_bella, af_heart, af_jessica, af_kore, af_nicole, af_nova, af_river, af_sarah, af_sky, am_adam, am_echo, am_eric, am_fenrir, am_liam, am_michael, am_onyx, am_puck, am_santa, bf_alice, bf_emma, bf_isabella, bf_lily, bm_daniel, bm_fable, bm_george, bm_lewis, ef_dora, em_alex, em_santa, ff_siwis, hf_alpha, hf_beta, hm_omega, hm_psi, if_sara, im_nicola, jf_alpha, jf_gongitsune, jf_nezumi, jf_tebukuro, jm_kumo, pf_dora, pm_alex, pm_santa, zf_xiaobei, zf_xiaoni, zf_xiaoxiao, zf_xiaoyi, zm_yunjian, zm_yunxi, zm_yunxia, zm_yunyang, altair, ara, atlas, aurora, carina, castor, celeste, cosmo, eve, helios, helix, iris, kepler, leo, liora, lumen, luna, lux, naksh, orion, perseus, rex, rigel, sal, sirius, ursa, zagan, zenith
+## Speech Tags
+Add inline speech tags to your text for expressive delivery. There are two types of tags:
 
-**Output formats:** mp3 (default), opus, aac, flac, wav, pcm\n\n
+### Inline Tags `[tag]`
+Placed at a specific point in the text to produce a vocal expression.
+
+| Category | Tags |
+| :--- | :--- |
+| **Pauses** | `[pause]`, `[long-pause]`, `[hum-tune]` |
+| **Laughter & Crying** | `[laugh]`, `[chuckle]`, `[giggle]`, `[cry]` |
+| **Mouth sounds** | `[tsk]`, `[tongue-click]`, `[lip-smack]` |
+| **Breathing** | `[breath]`, `[inhale]`, `[exhale]`, `[sigh]` |
+
+### Wrapping Tags `<tag>text</tag>`
+Wrap a section of text to change how it is delivered.
+
+| Category | Tags |
+| :--- | :--- |
+| **Volume & intensity** | `<soft>`, `<whisper>`, `<loud>`, `<build-intensity>`, `<decrease-intensity>` |
+| **Pitch & speed** | `<higher-pitch>`, `<lower-pitch>`, `<slow>`, `<fast>` |
+| **Vocal style** | `<sing-song>`, `<singing>`, `<emphasis>` |
+
+---
+
+## Voices
+Each voice has a distinct personality. Use `grok-tts` for best results.
+
+| Voice | Tone & Use Cases |
+| :--- | :--- |
+| **carina** | Soft, empathetic, and soothing |
+| **zagan** | Powerful, dramatic, and unmistakable |
+| **helix** | Bold, dynamic, and adrenaline-fueled |
+| **orion** | Rich, cinematic, and resonant |
+| **luna** | Gentle, patient, and deeply nurturing |
+| **iris** | Friendly, upbeat, and naturally charming |
+| **altair** | Elegant, refined, and effortlessly premium |
+| **zenith** | Sharp, focused, and driven |
+| **perseus** | Strong, confident, and trustworthy |
+| **helios** | Upbeat, energetic, and endlessly versatile |
+| **lux** | Grounded, calm, and quietly wise |
+| **kepler** | Inventive, forward-thinking, and charismatic |
+| **rigel** | Precise, professional, and calmly confident |
+| **cosmo** | Bright, curious, and easy to follow |
+| **celeste** | Compassionate, confident, and reassuring |
+| **ursa** | Friendly, warm, and steadfast |
+| **sirius** | Quick-witted, clever, and playful |
+| **lumen** | Warm, articulate, and engaging |
+| **castor** | Charismatic, down-to-earth, and easygoing |
+| **naksh** | Warm, thoughtful, and wise |
+| **atlas** | Confident, commanding, and reassuring |
+| **aurora** | Serene, steady, and radiant |
+| **liora** | Calm, grounded, and luminous |
+| **ara** | Warm and friendly |
+| **eve** | Energetic and upbeat |
+| **leo** | Authoritative and strong |
+| **rex** | Confident and clear |
+| **sal** | Smooth and balanced |
+
+*Voice IDs are case-insensitive.*
