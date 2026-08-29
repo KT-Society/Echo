@@ -36,7 +36,7 @@
 
 ## OpenAPI
 
-````yaml /suno-api/suno-voice-api.json POST /api/v1/voice/validate
+````yaml suno-api/suno-voice-api.json POST /api/v1/voice/validate
 openapi: 3.0.1
 info:
   title: Suno Voice API
@@ -45,7 +45,9 @@ info:
   contact:
     name: Technical Support
     email: support@sunoapi.org
-servers: []
+servers:
+  - url: https://api.sunoapi.org
+    description: API Server
 security:
   - BearerAuth: []
 tags:

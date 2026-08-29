@@ -1,5 +1,4 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
@@ -9,28 +8,29 @@
 
 ### Parameter Usage Guide
 
-- When customMode is true (Custom Mode):
-  - If instrumental is true: style, title and uploadUrl are required
-  - If instrumental is false: style, prompt, title and uploadUrl are required
-  - prompt length limit by model:
-    - **V4**: Maximum 3000 characters
-    - **V4_5, V4_5PLUS, V4_5ALL, V5 & V5_5**: Maximum 5000 characters
-  - style length limit by model:
-    - **V4**: Maximum 200 characters
-    - **V4_5, V4_5PLUS, V4_5ALL, V5 & V5_5**: Maximum 1000 characters
-  - title length limit by model:
-    - **V4 & V4_5ALL**: Maximum 80 characters
-    - **V4_5, V4_5PLUS, V5 & V5_5**: Maximum 100 characters
-  - uploadUrl is used to specify the upload location of the audio file; ensure the uploaded audio does not exceed 8 minutes in length.
-    - **Important**: When using the **V4_5ALL** model, the uploaded audio file must not exceed **1 minute** in length.
-- When customMode is false (Non-custom Mode):
-  - Only prompt and uploadUrl are required regardless of instrumental setting
-  - prompt length limit: 500 characters
-  - Other parameters should be left empty
+* When customMode is true (Custom Mode):
+  * If instrumental is true: style, title and uploadUrl are required
+  * If instrumental is false: style, prompt, title and uploadUrl are required
+  * prompt length limit by model:
+    * **V4**: Maximum 3000 characters
+    * **V4\_5, V4\_5PLUS, V4\_5ALL, V5 & V5\_5**: Maximum 5000 characters
+  * style length limit by model:
+    * **V4**: Maximum 200 characters
+    * **V4\_5, V4\_5PLUS, V4\_5ALL, V5 & V5\_5**: Maximum 1000 characters
+  * title length limit by model:
+    * **V4 & V4\_5ALL**: Maximum 80 characters
+    * **V4\_5, V4\_5PLUS, V5 & V5\_5**: Maximum 100 characters
+  * uploadUrl is used to specify the upload location of the audio file; ensure the uploaded audio does not exceed 8 minutes in length.
+    * **Important**: When using the **V4\_5ALL** model, the uploaded audio file must not exceed **1 minute** in length.
+* When customMode is false (Non-custom Mode):
+  * Only prompt and uploadUrl are required regardless of instrumental setting
+  * prompt length limit: 500 characters
+  * Other parameters should be left empty
 
 ### Optional Parameters
 
 <Note>
+  * <b>duration</b> (integer): Duration in seconds. Only effective when `customMode` is `true` and `model` is `V5_5`. Range: 10–360. Example: 20
   * <b>personaId</b> (string): Persona ID or Suno Voice `voiceId` to apply in Custom Mode. If you use a Voice-generated ID, set `personaModel` to `voice_persona`.
   * <b>personaModel</b> (string): Persona type. Use `style_persona` for Generate Persona IDs, or `voice_persona` for Suno Voice IDs.
 </Note>
@@ -38,7 +38,7 @@
 ### Developer Notes
 
 1. Recommended settings for new users: Set customMode to false, instrumental to false, and only provide prompt and uploadUrl. This is the simplest configuration to quickly test the API and experience the results.
-2. **V4_5ALL Model Upload Limit**: When using the V4_5ALL model, the uploaded audio file must not exceed **1 minute** in length.
+2. **V4\_5ALL Model Upload Limit**: When using the V4\_5ALL model, the uploaded audio file must not exceed **1 minute** in length.
 3. Generated files will be deleted after 15 days
 4. Ensure all required parameters are provided based on customMode and instrumental settings to avoid errors
 5. Pay attention to character limits for prompt, style, and title to ensure successful processing
@@ -46,9 +46,10 @@
 7. You can use the Get Music Generation Details endpoint to actively check task status instead of waiting for callbacks
 8. The uploadUrl parameter is used to specify the upload location of the audio file; please provide a valid URL.
 
+
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/generate/upload-cover
+````yaml suno-api/suno-api.json POST /api/v1/generate/upload-cover
 openapi: 3.0.0
 info:
   title: intro
@@ -118,7 +119,7 @@ paths:
                     The prompt serves as the core idea, and lyrics will be
                     automatically generated based on it (not strictly matching
                     the input). Maximum 500 characters.  
-                      Example: "A short relaxing piano tune"
+                      Example: "A short relaxing piano tune" 
                   example: A calm and relaxing piano track with soft melodies
                 style:
                   type: string
@@ -263,6 +264,14 @@ paths:
                   maximum: 1
                   multipleOf: 0.01
                   example: 0.65
+                duration:
+                  type: integer
+                  description: >-
+                    Optional duration in seconds. Only effective when
+                    `customMode` is `true` and `model` is `V5_5`.
+                  minimum: 10
+                  maximum: 360
+                  example: 20
                 callBackUrl:
                   type: string
                   format: uri
@@ -278,13 +287,13 @@ paths:
                     details endpoint to poll task status
                   example: https://api.example.com/callback
       responses:
-        "200":
+        '200':
           description: Request successful
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -294,11 +303,11 @@ paths:
                             type: string
                             description: Task ID for tracking task status
                             example: 5c79****be8e
-        "500":
-          $ref: "#/components/responses/Error"
+        '500':
+          $ref: '#/components/responses/Error'
       callbacks:
         audioGenerated:
-          "{request.body#/callBackUrl}":
+          '{request.body#/callBackUrl}':
             post:
               description: >-
                 System will call this callback when audio generation is
@@ -427,11 +436,11 @@ paths:
                                     type: number
                                     description: Audio duration (seconds)
               responses:
-                "200":
+                '200':
                   description: Callback received successfully
               method: post
               type: path
-            path: "{request.body#/callBackUrl}"
+            path: '{request.body#/callBackUrl}'
 components:
   schemas:
     ApiResponse:
@@ -509,4 +518,5 @@ components:
 
         > - If you suspect your API Key has been compromised, reset it
         immediately from the management page
+
 ````

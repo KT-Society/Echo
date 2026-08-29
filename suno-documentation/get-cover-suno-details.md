@@ -1,5 +1,4 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
@@ -9,21 +8,22 @@
 
 ### Usage Guide
 
-- Use this interface to check Cover generation task status
-- Access generated cover image URLs upon completion
-- Track processing progress and any errors that may occur
-- Supports polling to get task results, recommend querying every 30 seconds
+* Use this interface to check Cover generation task status
+* Access generated cover image URLs upon completion
+* Track processing progress and any errors that may occur
+* Supports polling to get task results, recommend querying every 30 seconds
 
 ### Developer Notes
 
-- Cover image URLs are only available upon successful completion
-- Error codes and messages are provided for failed tasks
-- After successful processing, cover images are retained for 14 days
-- Usually generates 2 different style cover images
+* Cover image URLs are only available upon successful completion
+* Error codes and messages are provided for failed tasks
+* After successful processing, cover images are retained for 14 days
+* Usually generates 2 different style cover images
+
 
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json GET /api/v1/suno/cover/record-info
+````yaml suno-api/suno-api.json GET /api/v1/suno/cover/record-info
 openapi: 3.0.0
 info:
   title: intro
@@ -98,7 +98,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Success
           content:
             application/json:
@@ -184,7 +184,7 @@ paths:
                         type: string
                         format: date-time
                         description: Completion callback time
-                        example: "2025-01-15T10:35:27.000Z"
+                        example: '2025-01-15T10:35:27.000Z'
                       response:
                         type: object
                         description: Completion callback result
@@ -214,7 +214,7 @@ paths:
                         type: string
                         format: date-time
                         description: Creation time
-                        example: "2025-01-15T10:33:01.000Z"
+                        example: '2025-01-15T10:33:01.000Z'
                       errorCode:
                         type: integer
                         format: int32
@@ -230,7 +230,7 @@ paths:
                       errorMessage:
                         type: string
                         description: Error message
-                        example: ""
+                        example: ''
               example:
                 code: 200
                 msg: success
@@ -238,7 +238,7 @@ paths:
                   taskId: 21aee3c3c2a01fa5e030b3799fa4dd56
                   parentTaskId: 73d6128b3523a0079df10da9471017c8
                   callbackUrl: https://api.example.com/callback
-                  completeTime: "2025-01-15T10:35:27.000Z"
+                  completeTime: '2025-01-15T10:35:27.000Z'
                   response:
                     images:
                       - >-
@@ -246,11 +246,11 @@ paths:
                       - >-
                         https://tempfile.aiquickdraw.com/s/1753958524_c153143acc6340908431cf0e90cbce9e.png
                   successFlag: 1
-                  createTime: "2025-01-15T10:33:01.000Z"
+                  createTime: '2025-01-15T10:33:01.000Z'
                   errorCode: 200
-                  errorMessage: ""
-        "500":
-          $ref: "#/components/responses/Error"
+                  errorMessage: ''
+        '500':
+          $ref: '#/components/responses/Error'
 components:
   responses:
     Error:
@@ -293,4 +293,5 @@ components:
 
         > - If you suspect your API Key has been compromised, reset it
         immediately from the management page
+
 ````

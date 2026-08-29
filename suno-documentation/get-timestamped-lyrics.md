@@ -1,5 +1,4 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
@@ -10,8 +9,8 @@
 ### Parameter Selection Logic
 
 1. audioId parameter:
-   - The audioId parameter is required to identify the exact track
-   - Provides a unique identifier for the audio track within the generation task
+   * The audioId parameter is required to identify the exact track
+   * Provides a unique identifier for the audio track within the generation task
 
 ### Developer Notes
 
@@ -20,9 +19,10 @@
 3. For instrumental tracks (generated with instrumental=true), no lyrics data will be available
 4. Typical use case: Karaoke-style lyrics display in music player interfaces
 
+
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/generate/get-timestamped-lyrics
+````yaml suno-api/suno-api.json POST /api/v1/generate/get-timestamped-lyrics
 openapi: 3.0.0
 info:
   title: intro
@@ -75,13 +75,13 @@ paths:
                   description: Audio ID of the track to retrieve lyrics for.
                   example: e231****-****-****-****-****8cadc7dc
       responses:
-        "200":
+        '200':
           description: Request successful
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -152,8 +152,8 @@ paths:
                     - 0.75
                   hootCer: 0.3803191489361702
                   isStreamed: false
-        "500":
-          $ref: "#/components/responses/Error"
+        '500':
+          $ref: '#/components/responses/Error'
 components:
   schemas:
     ApiResponse:
@@ -231,4 +231,5 @@ components:
 
         > - If you suspect your API Key has been compromised, reset it
         immediately from the management page
+
 ````

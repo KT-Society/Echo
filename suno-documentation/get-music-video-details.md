@@ -17,7 +17,7 @@
 
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json GET /api/v1/mp4/record-info
+````yaml suno-api/suno-api.json GET /api/v1/mp4/record-info
 openapi: 3.0.0
 info:
   title: intro

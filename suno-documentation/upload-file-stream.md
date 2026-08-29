@@ -37,7 +37,7 @@ curl -X POST https://sunoapiorg.redpandaai.co/api/file-stream-upload \
 
 ## OpenAPI
 
-````yaml /file-upload-api/file-upload-api.json POST /api/file-stream-upload
+````yaml file-upload-api/file-upload-api.json POST /api/file-stream-upload
 openapi: 3.0.0
 info:
   title: File Upload API

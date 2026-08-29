@@ -1,13 +1,12 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
-# Music Extension Callbacks
+# Upload and Cover Audio Callbacks
 
-> When music extension tasks are completed, the system will send results to your provided callback URL via POST request
+> When upload and cover audio tasks are completed, the system will send results to your provided callback URL via POST request
 
-When you submit a task to the Music Extension API, you can use the `callBackUrl` parameter to set a callback URL. When the task is completed, the system will automatically push the results to your specified address.
+When you submit a task to the Upload and Cover Audio API, you can use the `callBackUrl` parameter to set a callback URL. When the task is completed, the system will automatically push the results to your specified address.
 
 ## Callback Mechanism Overview
 
@@ -19,15 +18,15 @@ When you submit a task to the Music Extension API, you can use the `callBackUrl`
 
 The system will send callback notifications in the following situations:
 
-- Music extension task completed successfully
-- Music extension task failed
-- Errors occurred during task processing
+* Audio covering task completed successfully
+* Audio covering task failed
+* Errors occurred during task processing
 
 ### Callback Method
 
-- **HTTP Method**: POST
-- **Content Type**: application/json
-- **Timeout Setting**: 15 seconds
+* **HTTP Method**: POST
+* **Content Type**: application/json
+* **Timeout Setting**: 15 seconds
 
 ## Callback Request Format
 
@@ -62,18 +61,17 @@ When the task is completed, the system will send a POST request to your `callBac
   }
   ```
 
-```json Failure Callback theme={null}
-{
-  "code": 400,
-  "msg": "Music extension failed",
-  "data": {
-    "callbackType": "error",
-    "task_id": "2fac****9f72",
-    "data": null
+  ```json Failure Callback theme={null}
+  {
+    "code": 400,
+    "msg": "Audio covering failed",
+    "data": {
+      "callbackType": "error",
+      "task_id": "2fac****9f72",
+      "data": null
+    }
   }
-}
-```
-
+  ```
 </CodeGroup>
 
 ## Status Code Description
@@ -81,13 +79,12 @@ When the task is completed, the system will send a POST request to your `callBac
 <ParamField path="code" type="integer" required>
   Callback status code indicating task processing result:
 
-| Status Code | Description                                            |
-| ----------- | ------------------------------------------------------ |
-| 200         | Success - Music extension completed                    |
-| 400         | Bad Request - Parameter error, content violation, etc. |
-| 451         | Download Failed - Unable to download related files     |
-| 500         | Server Error - Please try again later                  |
-
+  | Status Code | Description                                                                           |
+  | ----------- | ------------------------------------------------------------------------------------- |
+  | 200         | Success - Audio covering completed                                                    |
+  | 400         | Bad Request - Parameter error, unsupported audio file format, content violation, etc. |
+  | 451         | Download Failed - Unable to download source audio file                                |
+  | 500         | Server Error - Please try again later                                                 |
 </ParamField>
 
 <ParamField path="msg" type="string" required>
@@ -97,18 +94,18 @@ When the task is completed, the system will send a POST request to your `callBac
 <ParamField path="data.callbackType" type="string" required>
   Callback type indicating the current callback stage:
 
-- `text`: Text generation completed
-- `first`: First music track completed
-- `complete`: All music tracks completed
-- `error`: Task failed
-  </ParamField>
+  * `text`: Text generation completed
+  * `first`: First music track completed
+  * `complete`: All music tracks completed
+  * `error`: Task failed
+</ParamField>
 
 <ParamField path="data.task_id" type="string" required>
   Task ID, consistent with the taskId returned when you submitted the task
 </ParamField>
 
 <ParamField path="data.data" type="array">
-  Music extension result information, returned on success
+  Audio covering result information, returned on success
 </ParamField>
 
 <ParamField path="data.data[].id" type="string">
@@ -116,7 +113,7 @@ When the task is completed, the system will send a POST request to your `callBac
 </ParamField>
 
 <ParamField path="data.data[].audio_url" type="string">
-  Extended audio file URL
+  Covered audio file URL
 </ParamField>
 
 <ParamField path="data.data[].source_audio_url" type="string">
@@ -175,47 +172,48 @@ Here are example codes for receiving callbacks in popular programming languages:
 
     app.use(express.json());
 
-    app.post('/extend-music-callback', (req, res) => {
+    app.post('/upload-cover-callback', (req, res) => {
       const { code, msg, data } = req.body;
-
-      console.log('Received music extension callback:', {
+      
+      console.log('Received audio covering callback:', {
         taskId: data.task_id,
         callbackType: data.callbackType,
         status: code,
         message: msg
       });
-
+      
       if (code === 200) {
         // Task completed successfully
-        console.log('Music extension completed');
+        console.log('Audio covering completed');
         const musicData = data.data || [];
-
-        console.log(`Extended ${musicData.length} music tracks:`);
+        
+        console.log(`Covered ${musicData.length} music tracks:`);
         musicData.forEach((music, index) => {
-          console.log(`Music ${index + 1}:`);
+          console.log(`Covered music ${index + 1}:`);
           console.log(`  Title: ${music.title}`);
           console.log(`  Duration: ${music.duration} seconds`);
-          console.log(`  Audio URL: ${music.audio_url}`);
+          console.log(`  Style tags: ${music.tags}`);
+          console.log(`  Covered audio URL: ${music.audio_url}`);
           console.log(`  Cover URL: ${music.image_url}`);
         });
-
-        // Process extended music
+        
+        // Process covered music
         // Can download audio files, save locally, etc.
-
+        
       } else {
         // Task failed
-        console.log('Music extension failed:', msg);
-
+        console.log('Audio covering failed:', msg);
+        
         // Handle failure cases...
         if (code === 400) {
           console.log('Parameter error or content violation');
         } else if (code === 451) {
-          console.log('File download failed');
+          console.log('Source audio file download failed');
         } else if (code === 500) {
           console.log('Server internal error');
         }
       }
-
+      
       // Return 200 status code to confirm callback received
       res.status(200).json({ status: 'received' });
     });
@@ -224,7 +222,6 @@ Here are example codes for receiving callbacks in popular programming languages:
       console.log('Callback server running on port 3000');
     });
     ```
-
   </Tab>
 
   <Tab title="Python">
@@ -234,63 +231,63 @@ Here are example codes for receiving callbacks in popular programming languages:
 
     app = Flask(__name__)
 
-    @app.route('/extend-music-callback', methods=['POST'])
+    @app.route('/upload-cover-callback', methods=['POST'])
     def handle_callback():
         data = request.json
-
+        
         code = data.get('code')
         msg = data.get('msg')
         callback_data = data.get('data', {})
         task_id = callback_data.get('task_id')
         callback_type = callback_data.get('callbackType')
         music_data = callback_data.get('data', [])
-
-        print(f"Received music extension callback: {task_id}, type: {callback_type}, status: {code}, message: {msg}")
-
+        
+        print(f"Received audio covering callback: {task_id}, type: {callback_type}, status: {code}, message: {msg}")
+        
         if code == 200:
             # Task completed successfully
-            print("Music extension completed")
-
-            print(f"Extended {len(music_data)} music tracks:")
+            print("Audio covering completed")
+            
+            print(f"Covered {len(music_data)} music tracks:")
             for i, music in enumerate(music_data):
-                print(f"Music {i + 1}:")
+                print(f"Covered music {i + 1}:")
                 print(f"  Title: {music.get('title')}")
                 print(f"  Duration: {music.get('duration')} seconds")
-                print(f"  Audio URL: {music.get('audio_url')}")
+                print(f"  Style tags: {music.get('tags')}")
+                print(f"  Covered audio URL: {music.get('audio_url')}")
                 print(f"  Cover URL: {music.get('image_url')}")
-
-                # Download audio file example
+                
+                # Download covered audio file example
                 try:
                     audio_url = music.get('audio_url')
                     if audio_url:
                         response = requests.get(audio_url)
                         if response.status_code == 200:
-                            filename = f"extended_music_{task_id}_{i + 1}.mp3"
+                            filename = f"covered_music_{task_id}_{i + 1}.mp3"
                             with open(filename, "wb") as f:
                                 f.write(response.content)
-                            print(f"Audio saved as {filename}")
+                            print(f"Covered audio saved as {filename}")
                 except Exception as e:
                     print(f"Audio download failed: {e}")
-
+                    
         else:
             # Task failed
-            print(f"Music extension failed: {msg}")
-
+            print(f"Audio covering failed: {msg}")
+            
             # Handle failure cases...
             if code == 400:
                 print("Parameter error or content violation")
             elif code == 451:
-                print("File download failed")
+                print("Source audio file download failed")
             elif code == 500:
                 print("Server internal error")
-
+        
         # Return 200 status code to confirm callback received
         return jsonify({'status': 'received'}), 200
 
     if __name__ == '__main__':
         app.run(host='0.0.0.0', port=3000)
     ```
-
   </Tab>
 
   <Tab title="PHP">
@@ -309,45 +306,46 @@ Here are example codes for receiving callbacks in popular programming languages:
     $callbackType = $callbackData['callbackType'] ?? '';
     $musicData = $callbackData['data'] ?? [];
 
-    error_log("Received music extension callback: $taskId, type: $callbackType, status: $code, message: $msg");
+    error_log("Received audio covering callback: $taskId, type: $callbackType, status: $code, message: $msg");
 
     if ($code === 200) {
         // Task completed successfully
-        error_log("Music extension completed");
-
-        error_log("Extended " . count($musicData) . " music tracks:");
+        error_log("Audio covering completed");
+        
+        error_log("Covered " . count($musicData) . " music tracks:");
         foreach ($musicData as $index => $music) {
-            error_log("Music " . ($index + 1) . ":");
+            error_log("Covered music " . ($index + 1) . ":");
             error_log("  Title: " . ($music['title'] ?? ''));
             error_log("  Duration: " . ($music['duration'] ?? 0) . " seconds");
-            error_log("  Audio URL: " . ($music['audio_url'] ?? ''));
+            error_log("  Style tags: " . ($music['tags'] ?? ''));
+            error_log("  Covered audio URL: " . ($music['audio_url'] ?? ''));
             error_log("  Cover URL: " . ($music['image_url'] ?? ''));
-
-            // Download audio file example
+            
+            // Download covered audio file example
             try {
                 $audioUrl = $music['audio_url'] ?? '';
                 if ($audioUrl) {
                     $audioContent = file_get_contents($audioUrl);
                     if ($audioContent !== false) {
-                        $filename = "extended_music_{$taskId}_" . ($index + 1) . ".mp3";
+                        $filename = "covered_music_{$taskId}_" . ($index + 1) . ".mp3";
                         file_put_contents($filename, $audioContent);
-                        error_log("Audio saved as $filename");
+                        error_log("Covered audio saved as $filename");
                     }
                 }
             } catch (Exception $e) {
                 error_log("Audio download failed: " . $e->getMessage());
             }
         }
-
+        
     } else {
         // Task failed
-        error_log("Music extension failed: $msg");
-
+        error_log("Audio covering failed: $msg");
+        
         // Handle failure cases...
         if ($code === 400) {
             error_log("Parameter error or content violation");
         } elseif ($code === 451) {
-            error_log("File download failed");
+            error_log("Source audio file download failed");
         } elseif ($code === 500) {
             error_log("Server internal error");
         }
@@ -358,7 +356,6 @@ Here are example codes for receiving callbacks in popular programming languages:
     echo json_encode(['status' => 'received']);
     ?>
     ```
-
   </Tab>
 </Tabs>
 
@@ -367,24 +364,25 @@ Here are example codes for receiving callbacks in popular programming languages:
 <Tip>
   ### Callback URL Configuration Recommendations
 
-1. **Use HTTPS**: Ensure your callback URL uses HTTPS protocol for secure data transmission
-2. **Verify Source**: Verify the legitimacy of the request source in callback processing
-3. **Idempotent Processing**: The same taskId may receive multiple callbacks, ensure processing logic is idempotent
-4. **Quick Response**: Callback processing should return a 200 status code as quickly as possible to avoid timeout
-5. **Asynchronous Processing**: Complex business logic should be processed asynchronously to avoid blocking callback response
-6. **Audio Processing**: Audio download and processing should be done in asynchronous tasks to avoid blocking callback response
-   </Tip>
+  1. **Use HTTPS**: Ensure your callback URL uses HTTPS protocol for secure data transmission
+  2. **Verify Source**: Verify the legitimacy of the request source in callback processing
+  3. **Idempotent Processing**: The same taskId may receive multiple callbacks, ensure processing logic is idempotent
+  4. **Quick Response**: Callback processing should return a 200 status code as quickly as possible to avoid timeout
+  5. **Asynchronous Processing**: Complex business logic should be processed asynchronously to avoid blocking callback response
+  6. **Audio Processing**: Audio download and processing should be done in asynchronous tasks to avoid blocking callback response
+</Tip>
 
 <Warning>
   ### Important Reminders
 
-- Callback URL must be a publicly accessible address
-- Server must respond within 15 seconds, otherwise it will be considered a timeout
-- If 3 consecutive retries fail, the system will stop sending callbacks
-- Please ensure the stability of callback processing logic to avoid callback failures due to exceptions
-- Generated audio URLs may have time limits, recommend downloading and saving promptly
-- Pay attention to content policy compliance to avoid generation failures due to policy violations
-  </Warning>
+  * Callback URL must be a publicly accessible address
+  * Server must respond within 15 seconds, otherwise it will be considered a timeout
+  * If 3 consecutive retries fail, the system will stop sending callbacks
+  * Please ensure the stability of callback processing logic to avoid callback failures due to exceptions
+  * Generated audio URLs may have time limits, recommend downloading and saving promptly
+  * Pay attention to content policy compliance to avoid generation failures due to policy violations
+  * Ensure uploaded audio file format is supported
+</Warning>
 
 ## Troubleshooting
 
@@ -414,6 +412,7 @@ If you do not receive callback notifications, please check the following:
     * Check audio download permissions and network connections
     * Verify audio save paths and permissions
     * Note whether audio content complies with content policies
+    * Confirm source audio file format is supported
   </Accordion>
 </AccordionGroup>
 

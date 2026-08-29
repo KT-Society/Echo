@@ -1,13 +1,12 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
-# Add Vocals Callbacks
+# Add Instrumental Callbacks
 
-> When vocal generation tasks are completed, the system will send results to your provided callback URL via POST request
+> When instrumental generation tasks are completed, the system will send results to your provided callback URL via POST request
 
-When you submit a task to the Add Vocals API, you can use the `callBackUrl` parameter to set a callback URL. When the task is completed, the system will automatically push the results to your specified address.
+When you submit a task to the Add Instrumental API, you can use the `callBackUrl` parameter to set a callback URL. When the task is completed, the system will automatically push the results to your specified address.
 
 ## Callback Mechanism Overview
 
@@ -19,15 +18,15 @@ When you submit a task to the Add Vocals API, you can use the `callBackUrl` para
 
 The system will send callback notifications in the following situations:
 
-- Vocal generation task completed successfully
-- Vocal generation task failed
-- Errors occurred during task processing
+* Instrumental generation task completed successfully
+* Instrumental generation task failed
+* Errors occurred during task processing
 
 ### Callback Method
 
-- **HTTP Method**: POST
-- **Content Type**: application/json
-- **Timeout Setting**: 15 seconds
+* **HTTP Method**: POST
+* **Content Type**: application/json
+* **Timeout Setting**: 15 seconds
 
 ## Callback Request Format
 
@@ -50,10 +49,10 @@ When the task is completed, the system will send a POST request to your `callBac
           "source_stream_audio_url": "https://example.cn/****",
           "image_url": "https://example.cn/****.jpeg",
           "source_image_url": "https://example.cn/****.jpeg",
-          "prompt": "[Verse] Calm and relaxing melodies with soothing vocals",
+          "prompt": "[Instrumental] Relaxing piano melody",
           "model_name": "chirp-v3-5",
-          "title": "Relaxing Piano with Vocals",
-          "tags": "relaxing, piano, vocals, jazz",
+          "title": "Relaxing Piano Instrumental",
+          "tags": "relaxing, piano, instrumental",
           "createTime": "2025-01-01 00:00:00",
           "duration": 198.44
         }
@@ -62,18 +61,17 @@ When the task is completed, the system will send a POST request to your `callBac
   }
   ```
 
-```json Failure Callback theme={null}
-{
-  "code": 400,
-  "msg": "Vocal generation failed",
-  "data": {
-    "callbackType": "error",
-    "task_id": "2fac****9f72",
-    "data": null
+  ```json Failure Callback theme={null}
+  {
+    "code": 400,
+    "msg": "Instrumental generation failed",
+    "data": {
+      "callbackType": "error",
+      "task_id": "2fac****9f72",
+      "data": null
+    }
   }
-}
-```
-
+  ```
 </CodeGroup>
 
 ## Status Code Description
@@ -81,13 +79,12 @@ When the task is completed, the system will send a POST request to your `callBac
 <ParamField path="code" type="integer" required>
   Callback status code indicating task processing result:
 
-| Status Code | Description                                            |
-| ----------- | ------------------------------------------------------ |
-| 200         | Success - Vocal generation completed                   |
-| 400         | Bad Request - Parameter error, content violation, etc. |
-| 451         | Download Failed - Unable to download related files     |
-| 500         | Server Error - Please try again later                  |
-
+  | Status Code | Description                                            |
+  | ----------- | ------------------------------------------------------ |
+  | 200         | Success - Instrumental generation completed            |
+  | 400         | Bad Request - Parameter error, content violation, etc. |
+  | 451         | Download Failed - Unable to download related files     |
+  | 500         | Server Error - Please try again later                  |
 </ParamField>
 
 <ParamField path="msg" type="string" required>
@@ -97,18 +94,18 @@ When the task is completed, the system will send a POST request to your `callBac
 <ParamField path="data.callbackType" type="string" required>
   Callback type indicating the current callback stage:
 
-- `text`: Text generation completed
-- `first`: First track completed
-- `complete`: All tracks completed
-- `error`: Task failed
-  </ParamField>
+  * `text`: Text generation completed
+  * `first`: First track completed
+  * `complete`: All tracks completed
+  * `error`: Task failed
+</ParamField>
 
 <ParamField path="data.task_id" type="string" required>
   Task ID, consistent with the taskId returned when you submitted the task
 </ParamField>
 
 <ParamField path="data.data" type="array">
-  Vocal generation result information, returned on success
+  Instrumental generation result information, returned on success
 </ParamField>
 
 <ParamField path="data.data[].id" type="string">
@@ -116,19 +113,19 @@ When the task is completed, the system will send a POST request to your `callBac
 </ParamField>
 
 <ParamField path="data.data[].audio_url" type="string">
-  Generated vocal audio file URL
+  Generated instrumental audio file URL
 </ParamField>
 
 <ParamField path="data.data[].source_audio_url" type="string">
-  Original vocal audio file URL
+  Original instrumental audio file URL
 </ParamField>
 
 <ParamField path="data.data[].stream_audio_url" type="string">
-  Streaming vocal audio URL
+  Streaming instrumental audio URL
 </ParamField>
 
 <ParamField path="data.data[].source_stream_audio_url" type="string">
-  Original streaming vocal audio URL
+  Original streaming instrumental audio URL
 </ParamField>
 
 <ParamField path="data.data[].image_url" type="string">
@@ -140,7 +137,7 @@ When the task is completed, the system will send a POST request to your `callBac
 </ParamField>
 
 <ParamField path="data.data[].prompt" type="string">
-  Generation prompt/lyrics describing the vocals
+  Generation prompt describing the instrumental
 </ParamField>
 
 <ParamField path="data.data[].model_name" type="string">
@@ -148,11 +145,11 @@ When the task is completed, the system will send a POST request to your `callBac
 </ParamField>
 
 <ParamField path="data.data[].title" type="string">
-  Vocal track title
+  Instrumental track title
 </ParamField>
 
 <ParamField path="data.data[].tags" type="string">
-  Vocal track tags
+  Instrumental track tags
 </ParamField>
 
 <ParamField path="data.data[].createTime" type="string">
@@ -175,38 +172,38 @@ Here are example codes for receiving callbacks in popular programming languages:
 
     app.use(express.json());
 
-    app.post('/add-vocals-callback', (req, res) => {
+    app.post('/add-instrumental-callback', (req, res) => {
       const { code, msg, data } = req.body;
-
-      console.log('Received vocal generation callback:', {
+      
+      console.log('Received instrumental generation callback:', {
         taskId: data.task_id,
         callbackType: data.callbackType,
         status: code,
         message: msg
       });
-
+      
       if (code === 200) {
         // Task completed successfully
-        console.log('Vocal generation completed');
-        const vocalData = data.data || [];
-
-        console.log(`Generated ${vocalData.length} vocal tracks:`);
-        vocalData.forEach((vocal, index) => {
-          console.log(`Vocal ${index + 1}:`);
-          console.log(`  Title: ${vocal.title}`);
-          console.log(`  Duration: ${vocal.duration} seconds`);
-          console.log(`  Tags: ${vocal.tags}`);
-          console.log(`  Audio URL: ${vocal.audio_url}`);
-          console.log(`  Cover URL: ${vocal.image_url}`);
+        console.log('Instrumental generation completed');
+        const instrumentalData = data.data || [];
+        
+        console.log(`Generated ${instrumentalData.length} instrumental tracks:`);
+        instrumentalData.forEach((instrumental, index) => {
+          console.log(`Instrumental ${index + 1}:`);
+          console.log(`  Title: ${instrumental.title}`);
+          console.log(`  Duration: ${instrumental.duration} seconds`);
+          console.log(`  Tags: ${instrumental.tags}`);
+          console.log(`  Audio URL: ${instrumental.audio_url}`);
+          console.log(`  Cover URL: ${instrumental.image_url}`);
         });
-
-        // Process generated vocals
+        
+        // Process generated instrumental
         // Can download audio files, save locally, etc.
-
+        
       } else {
         // Task failed
-        console.log('Vocal generation failed:', msg);
-
+        console.log('Instrumental generation failed:', msg);
+        
         // Handle failure cases...
         if (code === 400) {
           console.log('Parameter error or content violation');
@@ -216,7 +213,7 @@ Here are example codes for receiving callbacks in popular programming languages:
           console.log('Server internal error');
         }
       }
-
+      
       // Return 200 status code to confirm callback received
       res.status(200).json({ status: 'received' });
     });
@@ -225,7 +222,6 @@ Here are example codes for receiving callbacks in popular programming languages:
       console.log('Callback server running on port 3000');
     });
     ```
-
   </Tab>
 
   <Tab title="Python">
@@ -235,49 +231,49 @@ Here are example codes for receiving callbacks in popular programming languages:
 
     app = Flask(__name__)
 
-    @app.route('/add-vocals-callback', methods=['POST'])
+    @app.route('/add-instrumental-callback', methods=['POST'])
     def handle_callback():
         data = request.json
-
+        
         code = data.get('code')
         msg = data.get('msg')
         callback_data = data.get('data', {})
         task_id = callback_data.get('task_id')
         callback_type = callback_data.get('callbackType')
-        vocal_data = callback_data.get('data', [])
-
-        print(f"Received vocal generation callback: {task_id}, type: {callback_type}, status: {code}, message: {msg}")
-
+        instrumental_data = callback_data.get('data', [])
+        
+        print(f"Received instrumental generation callback: {task_id}, type: {callback_type}, status: {code}, message: {msg}")
+        
         if code == 200:
             # Task completed successfully
-            print("Vocal generation completed")
-
-            print(f"Generated {len(vocal_data)} vocal tracks:")
-            for i, vocal in enumerate(vocal_data):
-                print(f"Vocal {i + 1}:")
-                print(f"  Title: {vocal.get('title')}")
-                print(f"  Duration: {vocal.get('duration')} seconds")
-                print(f"  Tags: {vocal.get('tags')}")
-                print(f"  Audio URL: {vocal.get('audio_url')}")
-                print(f"  Cover URL: {vocal.get('image_url')}")
-
+            print("Instrumental generation completed")
+            
+            print(f"Generated {len(instrumental_data)} instrumental tracks:")
+            for i, instrumental in enumerate(instrumental_data):
+                print(f"Instrumental {i + 1}:")
+                print(f"  Title: {instrumental.get('title')}")
+                print(f"  Duration: {instrumental.get('duration')} seconds")
+                print(f"  Tags: {instrumental.get('tags')}")
+                print(f"  Audio URL: {instrumental.get('audio_url')}")
+                print(f"  Cover URL: {instrumental.get('image_url')}")
+                
                 # Download audio file example
                 try:
-                    audio_url = vocal.get('audio_url')
+                    audio_url = instrumental.get('audio_url')
                     if audio_url:
                         response = requests.get(audio_url)
                         if response.status_code == 200:
-                            filename = f"generated_vocal_{task_id}_{i + 1}.mp3"
+                            filename = f"generated_instrumental_{task_id}_{i + 1}.mp3"
                             with open(filename, "wb") as f:
                                 f.write(response.content)
-                            print(f"Vocal saved as {filename}")
+                            print(f"Instrumental saved as {filename}")
                 except Exception as e:
                     print(f"Audio download failed: {e}")
-
+                    
         else:
             # Task failed
-            print(f"Vocal generation failed: {msg}")
-
+            print(f"Instrumental generation failed: {msg}")
+            
             # Handle failure cases...
             if code == 400:
                 print("Parameter error or content violation")
@@ -285,14 +281,13 @@ Here are example codes for receiving callbacks in popular programming languages:
                 print("File download failed")
             elif code == 500:
                 print("Server internal error")
-
+        
         # Return 200 status code to confirm callback received
         return jsonify({'status': 'received'}), 200
 
     if __name__ == '__main__':
         app.run(host='0.0.0.0', port=3000)
     ```
-
   </Tab>
 
   <Tab title="PHP">
@@ -309,43 +304,43 @@ Here are example codes for receiving callbacks in popular programming languages:
     $callbackData = $data['data'] ?? [];
     $taskId = $callbackData['task_id'] ?? '';
     $callbackType = $callbackData['callbackType'] ?? '';
-    $vocalData = $callbackData['data'] ?? [];
+    $instrumentalData = $callbackData['data'] ?? [];
 
-    error_log("Received vocal generation callback: $taskId, type: $callbackType, status: $code, message: $msg");
+    error_log("Received instrumental generation callback: $taskId, type: $callbackType, status: $code, message: $msg");
 
     if ($code === 200) {
         // Task completed successfully
-        error_log("Vocal generation completed");
-
-        error_log("Generated " . count($vocalData) . " vocal tracks:");
-        foreach ($vocalData as $index => $vocal) {
-            error_log("Vocal " . ($index + 1) . ":");
-            error_log("  Title: " . ($vocal['title'] ?? ''));
-            error_log("  Duration: " . ($vocal['duration'] ?? 0) . " seconds");
-            error_log("  Tags: " . ($vocal['tags'] ?? ''));
-            error_log("  Audio URL: " . ($vocal['audio_url'] ?? ''));
-            error_log("  Cover URL: " . ($vocal['image_url'] ?? ''));
-
+        error_log("Instrumental generation completed");
+        
+        error_log("Generated " . count($instrumentalData) . " instrumental tracks:");
+        foreach ($instrumentalData as $index => $instrumental) {
+            error_log("Instrumental " . ($index + 1) . ":");
+            error_log("  Title: " . ($instrumental['title'] ?? ''));
+            error_log("  Duration: " . ($instrumental['duration'] ?? 0) . " seconds");
+            error_log("  Tags: " . ($instrumental['tags'] ?? ''));
+            error_log("  Audio URL: " . ($instrumental['audio_url'] ?? ''));
+            error_log("  Cover URL: " . ($instrumental['image_url'] ?? ''));
+            
             // Download audio file example
             try {
-                $audioUrl = $vocal['audio_url'] ?? '';
+                $audioUrl = $instrumental['audio_url'] ?? '';
                 if ($audioUrl) {
                     $audioContent = file_get_contents($audioUrl);
                     if ($audioContent !== false) {
-                        $filename = "generated_vocal_{$taskId}_" . ($index + 1) . ".mp3";
+                        $filename = "generated_instrumental_{$taskId}_" . ($index + 1) . ".mp3";
                         file_put_contents($filename, $audioContent);
-                        error_log("Vocal saved as $filename");
+                        error_log("Instrumental saved as $filename");
                     }
                 }
             } catch (Exception $e) {
                 error_log("Audio download failed: " . $e->getMessage());
             }
         }
-
+        
     } else {
         // Task failed
-        error_log("Vocal generation failed: $msg");
-
+        error_log("Instrumental generation failed: $msg");
+        
         // Handle failure cases...
         if ($code === 400) {
             error_log("Parameter error or content violation");
@@ -361,7 +356,6 @@ Here are example codes for receiving callbacks in popular programming languages:
     echo json_encode(['status' => 'received']);
     ?>
     ```
-
   </Tab>
 </Tabs>
 
@@ -370,24 +364,24 @@ Here are example codes for receiving callbacks in popular programming languages:
 <Tip>
   ### Callback URL Configuration Recommendations
 
-1. **Use HTTPS**: Ensure your callback URL uses HTTPS protocol for secure data transmission
-2. **Verify Source**: Verify the legitimacy of the request source in callback processing
-3. **Idempotent Processing**: The same taskId may receive multiple callbacks, ensure processing logic is idempotent
-4. **Quick Response**: Callback processing should return a 200 status code as quickly as possible to avoid timeout
-5. **Asynchronous Processing**: Complex business logic should be processed asynchronously to avoid blocking callback response
-6. **Audio Processing**: Audio download and processing should be done in asynchronous tasks to avoid blocking callback response
-   </Tip>
+  1. **Use HTTPS**: Ensure your callback URL uses HTTPS protocol for secure data transmission
+  2. **Verify Source**: Verify the legitimacy of the request source in callback processing
+  3. **Idempotent Processing**: The same taskId may receive multiple callbacks, ensure processing logic is idempotent
+  4. **Quick Response**: Callback processing should return a 200 status code as quickly as possible to avoid timeout
+  5. **Asynchronous Processing**: Complex business logic should be processed asynchronously to avoid blocking callback response
+  6. **Audio Processing**: Audio download and processing should be done in asynchronous tasks to avoid blocking callback response
+</Tip>
 
 <Warning>
   ### Important Reminders
 
-- Callback URL must be a publicly accessible address
-- Server must respond within 15 seconds, otherwise it will be considered a timeout
-- If 3 consecutive retries fail, the system will stop sending callbacks
-- Please ensure the stability of callback processing logic to avoid callback failures due to exceptions
-- Generated audio URLs may have time limits, recommend downloading and saving promptly
-- Pay attention to content policy compliance to avoid generation failures due to policy violations
-  </Warning>
+  * Callback URL must be a publicly accessible address
+  * Server must respond within 15 seconds, otherwise it will be considered a timeout
+  * If 3 consecutive retries fail, the system will stop sending callbacks
+  * Please ensure the stability of callback processing logic to avoid callback failures due to exceptions
+  * Generated audio URLs may have time limits, recommend downloading and saving promptly
+  * Pay attention to content policy compliance to avoid generation failures due to policy violations
+</Warning>
 
 ## Troubleshooting
 

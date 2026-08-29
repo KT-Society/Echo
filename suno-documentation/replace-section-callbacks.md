@@ -1,5 +1,4 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
@@ -15,14 +14,14 @@ When you submit a replace music section task to the API, you can provide a `call
 
 The system sends callbacks at the following times:
 
-- **Complete**: When the replacement task is fully completed
+* **Complete**: When the replacement task is fully completed
 
 ### Callback Method
 
-- **HTTP Method**: POST
-- **Content-Type**: application/json
-- **Timeout**: 10 seconds
-- **Retry Policy**: Up to 3 attempts with exponential backoff
+* **HTTP Method**: POST
+* **Content-Type**: application/json
+* **Timeout**: 10 seconds
+* **Retry Policy**: Up to 3 attempts with exponential backoff
 
 ## Request Format
 
@@ -151,130 +150,125 @@ When the replacement task fails:
         </ResponseField>
       </Expandable>
     </ResponseField>
-
   </Expandable>
 </ResponseField>
 
 ## Implementation Examples
 
-### Node.js (Express)
+<CodeGroup>
+  ```javascript Node.js (Express) theme={null}
+  const express = require('express');
+  const app = express();
 
-```javascript theme={null}
-const express = require("express");
-const app = express();
+  app.use(express.json());
 
-app.use(express.json());
-
-app.post("/replace-section-callback", (req, res) => {
-  const { code, msg, data } = req.body;
-
-  console.log("Replace section callback received:", {
-    code,
-    msg,
-    taskId: data.task_id,
-    callbackType: data.callbackType,
+  app.post('/replace-section-callback', (req, res) => {
+    const { code, msg, data } = req.body;
+    
+    console.log('Replace section callback received:', {
+      code,
+      msg,
+      taskId: data.task_id,
+      callbackType: data.callbackType
+    });
+    
+    if (code === 200 && data.callbackType === 'complete') {
+      // Handle successful replacement
+      console.log('Replacement completed successfully');
+      data.data.forEach((music, index) => {
+        console.log(`Music ${index + 1}:`, {
+          id: music.id,
+          title: music.title,
+          duration: music.duration,
+          audioUrl: music.audio_url
+        });
+      });
+    } else {
+      // Handle failure
+      console.log('Replacement failed:', msg);
+    }
+    
+    // Always respond with success to acknowledge receipt
+    res.json({ code: 200, msg: 'success' });
   });
 
-  if (code === 200 && data.callbackType === "complete") {
-    // Handle successful replacement
-    console.log("Replacement completed successfully");
-    data.data.forEach((music, index) => {
-      console.log(`Music ${index + 1}:`, {
-        id: music.id,
-        title: music.title,
-        duration: music.duration,
-        audioUrl: music.audio_url,
-      });
-    });
-  } else {
-    // Handle failure
-    console.log("Replacement failed:", msg);
+  app.listen(3000, () => {
+    console.log('Callback server running on port 3000');
+  });
+  ```
+
+  ```python Python (Flask) theme={null}
+  from flask import Flask, request, jsonify
+  import logging
+
+  app = Flask(__name__)
+  logging.basicConfig(level=logging.INFO)
+
+  @app.route('/replace-section-callback', methods=['POST'])
+  def replace_section_callback():
+      data = request.json
+      code = data.get('code')
+      msg = data.get('msg')
+      callback_data = data.get('data', {})
+      
+      logging.info(f"Replace section callback received: code={code}, msg={msg}")
+      
+      if code == 200 and callback_data.get('callbackType') == 'complete':
+          # Handle successful replacement
+          logging.info("Replacement completed successfully")
+          music_data = callback_data.get('data', [])
+          for i, music in enumerate(music_data):
+              logging.info(f"Music {i + 1}: {music.get('title')} - {music.get('duration')}s")
+      else:
+          # Handle failure
+          logging.error(f"Replacement failed: {msg}")
+      
+      # Always respond with success
+      return jsonify({"code": 200, "msg": "success"})
+
+  if __name__ == '__main__':
+      app.run(host='0.0.0.0', port=3000)
+  ```
+
+  ```php PHP theme={null}
+  <?php
+  header('Content-Type: application/json');
+
+  // Get the raw POST data
+  $input = file_get_contents('php://input');
+  $data = json_decode($input, true);
+
+  if ($data === null) {
+      http_response_code(400);
+      echo json_encode(['code' => 400, 'msg' => 'Invalid JSON']);
+      exit;
   }
 
-  // Always respond with success to acknowledge receipt
-  res.json({ code: 200, msg: "success" });
-});
+  $code = $data['code'] ?? null;
+  $msg = $data['msg'] ?? '';
+  $callbackData = $data['data'] ?? [];
 
-app.listen(3000, () => {
-  console.log("Callback server running on port 3000");
-});
-```
+  error_log("Replace section callback received: code=$code, msg=$msg");
 
-### Python (Flask)
+  if ($code === 200 && ($callbackData['callbackType'] ?? '') === 'complete') {
+      // Handle successful replacement
+      error_log("Replacement completed successfully");
+      $musicData = $callbackData['data'] ?? [];
+      foreach ($musicData as $index => $music) {
+          $title = $music['title'] ?? 'Unknown';
+          $duration = $music['duration'] ?? 0;
+          error_log("Music " . ($index + 1) . ": $title - {$duration}s");
+      }
+  } else {
+      // Handle failure
+      error_log("Replacement failed: $msg");
+  }
 
-```python theme={null}
-from flask import Flask, request, jsonify
-import logging
-
-app = Flask(__name__)
-logging.basicConfig(level=logging.INFO)
-
-@app.route('/replace-section-callback', methods=['POST'])
-def replace_section_callback():
-    data = request.json
-    code = data.get('code')
-    msg = data.get('msg')
-    callback_data = data.get('data', {})
-
-    logging.info(f"Replace section callback received: code={code}, msg={msg}")
-
-    if code == 200 and callback_data.get('callbackType') == 'complete':
-        # Handle successful replacement
-        logging.info("Replacement completed successfully")
-        music_data = callback_data.get('data', [])
-        for i, music in enumerate(music_data):
-            logging.info(f"Music {i + 1}: {music.get('title')} - {music.get('duration')}s")
-    else:
-        # Handle failure
-        logging.error(f"Replacement failed: {msg}")
-
-    # Always respond with success
-    return jsonify({"code": 200, "msg": "success"})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3000)
-```
-
-### PHP
-
-```php theme={null}
-<?php
-header('Content-Type: application/json');
-
-// Get the raw POST data
-$input = file_get_contents('php://input');
-$data = json_decode($input, true);
-
-if ($data === null) {
-    http_response_code(400);
-    echo json_encode(['code' => 400, 'msg' => 'Invalid JSON']);
-    exit;
-}
-
-$code = $data['code'] ?? null;
-$msg = $data['msg'] ?? '';
-$callbackData = $data['data'] ?? [];
-
-error_log("Replace section callback received: code=$code, msg=$msg");
-
-if ($code === 200 && ($callbackData['callbackType'] ?? '') === 'complete') {
-    // Handle successful replacement
-    error_log("Replacement completed successfully");
-    $musicData = $callbackData['data'] ?? [];
-    foreach ($musicData as $index => $music) {
-        $title = $music['title'] ?? 'Unknown';
-        $duration = $music['duration'] ?? 0;
-        error_log("Music " . ($index + 1) . ": $title - {$duration}s");
-    }
-} else {
-    // Handle failure
-    error_log("Replacement failed: $msg");
-}
-
-// Always respond with success
-echo json_encode(['code' => 200, 'msg' => 'success']);
-?>
-```
+  // Always respond with success
+  echo json_encode(['code' => 200, 'msg' => 'success']);
+  ?>
+  ```
+</CodeGroup>
 
 ## Callback Security
 
@@ -288,25 +282,25 @@ echo json_encode(['code' => 200, 'msg' => 'success']);
 ### Example Security Implementation
 
 ```javascript theme={null}
-const crypto = require("crypto");
+const crypto = require('crypto');
 
 function verifyCallback(req, res, next) {
   // Verify request structure
   const { code, msg, data } = req.body;
-  if (typeof code !== "number" || typeof msg !== "string" || !data) {
-    return res.status(400).json({ code: 400, msg: "Invalid callback format" });
+  if (typeof code !== 'number' || typeof msg !== 'string' || !data) {
+    return res.status(400).json({ code: 400, msg: 'Invalid callback format' });
   }
-
+  
   // Verify task ID format
   const taskId = data.task_id;
   if (!taskId || !/^[a-f0-9\*]{12}$/.test(taskId)) {
-    return res.status(400).json({ code: 400, msg: "Invalid task ID" });
+    return res.status(400).json({ code: 400, msg: 'Invalid task ID' });
   }
-
+  
   next();
 }
 
-app.post("/replace-section-callback", verifyCallback, (req, res) => {
+app.post('/replace-section-callback', verifyCallback, (req, res) => {
   // Process verified callback
   // ... callback handling logic
 });
@@ -318,24 +312,24 @@ app.post("/replace-section-callback", verifyCallback, (req, res) => {
 
 **Q: Callbacks are not being received**
 
-- Verify your callback URL is publicly accessible
-- Check that your server is responding within 10 seconds
-- Ensure your endpoint accepts POST requests with JSON content
+* Verify your callback URL is publicly accessible
+* Check that your server is responding within 10 seconds
+* Ensure your endpoint accepts POST requests with JSON content
 
 **Q: Receiving duplicate callbacks**
 
-- This can happen due to network issues or timeouts
-- Implement idempotency using the task_id to handle duplicates
+* This can happen due to network issues or timeouts
+* Implement idempotency using the task\_id to handle duplicates
 
 **Q: Callback data is missing or incomplete**
 
-- Check the `callbackType` field to understand the callback stage
-- For error callbacks, check the error message for details
+* Check the `callbackType` field to understand the callback stage
+* For error callbacks, check the error message for details
 
 **Q: How to handle callback failures?**
 
-- Always return a 200 status code to acknowledge receipt
-- Use the [Get Music Details](./get-music-details) endpoint to poll task status as a fallback
+* Always return a 200 status code to acknowledge receipt
+* Use the [Get Music Details](./get-music-generation-details) endpoint to poll task status as a fallback
 
 ### Best Practices
 

@@ -1,11 +1,10 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
 # Boost Music Style
 
-This is an exclusive capability of V4_5. The style functionality of V4_5 has been significantly enhanced, as stated on the official website:
+This is an exclusive capability of V4\_5. The style functionality of V4\_5 has been significantly enhanced, as stated on the official website:
 
 > One of the many advantages of the new 4.5 model is its ability to accommodate more detailed style instructions. In previous models, it was necessary to prioritize specific genre and style details, but now instructions can incorporate a more conversational prompt.
 >
@@ -17,11 +16,12 @@ The 'Boost Your Style' feature will significantly enhance users' ability to desc
 
 ### Parameter Description
 
-- content: Required, string type. Style description is required.
+* content: Required, string type. Style description is required.
+
 
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/style/generate
+````yaml suno-api/suno-api.json POST /api/v1/style/generate
 openapi: 3.0.0
 info:
   title: intro
@@ -70,13 +70,13 @@ paths:
                     'Pop, Mysterious'
                   example: Pop, Mysterious
       responses:
-        "200":
+        '200':
           description: Request successful
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -101,7 +101,7 @@ paths:
                             description: Credits remaining after this task
                           successFlag:
                             type: string
-                            description: "Execution result: 0-pending, 1-success, 2-failed"
+                            description: 'Execution result: 0-pending, 1-success, 2-failed'
                           errorCode:
                             type: number
                             description: Error code
@@ -111,8 +111,8 @@ paths:
                           createTime:
                             type: string
                             description: Creation time
-        "500":
-          $ref: "#/components/responses/Error"
+        '500':
+          $ref: '#/components/responses/Error'
 components:
   schemas:
     ApiResponse:
@@ -190,4 +190,5 @@ components:
 
         > - If you suspect your API Key has been compromised, reset it
         immediately from the management page
+
 ````

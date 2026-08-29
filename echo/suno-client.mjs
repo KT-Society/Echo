@@ -270,12 +270,260 @@ async function extendMusic({ audioId, prompt, style, title, continueAt, model, d
 }
 
 /**
+ * ✂️ Replace Music Section
+ * POST /api/v1/generate/replace-section
+ */
+async function replaceSection({ taskId, audioId, prompt, tags, style, title, infillStartS, infillEndS, fullLyrics, negativeTags, callbackUrl }) {
+  if (!taskId || !audioId) {
+    console.error('❌ Parameter --taskId und --audioId sind erforderlich!');
+    process.exit(1);
+  }
+
+  if (infillStartS === undefined || infillEndS === undefined) {
+    console.error('❌ Zeitbereich --infillStartS und --infillEndS sind erforderlich (z.B. --infillStartS 10.5 --infillEndS 25.0)!');
+    process.exit(1);
+  }
+
+  const startS = parseFloat(infillStartS);
+  const endS = parseFloat(infillEndS);
+  const duration = endS - startS;
+
+  if (duration < 6 || duration > 60) {
+    console.warn(`⚠️ Das Austausch-Intervall (${duration.toFixed(2)}s) sollte zwischen 6 und 60 Sekunden liegen.`);
+  }
+
+  const body = {
+    taskId,
+    audioId,
+    prompt: prompt || '',
+    tags: tags || style || 'pop',
+    title: title || 'Replaced Section Track',
+    infillStartS: startS,
+    infillEndS: endS,
+    fullLyrics: fullLyrics || prompt || '',
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
+  };
+
+  if (negativeTags) body.negativeTags = negativeTags;
+
+  console.log(`✂️ Ersetze Musik-Abschnitt (${startS}s bis ${endS}s)...`);
+  console.log(`   Task ID: ${taskId} | Audio ID: ${audioId}`);
+  console.log(`   Title: ${body.title} | Tags: ${body.tags}`);
+  if (body.prompt) console.log(`   Neuer Abschnitts-Prompt: ${body.prompt.substring(0, 60)}...`);
+
+  const result = await apiRequest('POST', '/api/v1/generate/replace-section', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * 👤 Generate Persona
+ * POST /api/v1/generate/generate-persona
+ */
+async function generatePersona({ taskId, audioId, name, description, style, vocalStart, vocalEnd }) {
+  if (!taskId || !audioId || !name || !description) {
+    console.error('❌ Parameter --taskId, --audioId, --name und --description sind erforderlich!');
+    process.exit(1);
+  }
+
+  const body = {
+    taskId,
+    audioId,
+    name,
+    description,
+    vocalStart: vocalStart !== undefined ? parseFloat(vocalStart) : 0,
+    vocalEnd: vocalEnd !== undefined ? parseFloat(vocalEnd) : 30,
+  };
+  if (style) body.style = style;
+
+  console.log(`👤 Erstelle Persona "${name}"...`);
+  console.log(`   Task ID: ${taskId} | Audio ID: ${audioId}`);
+  console.log(`   Description: ${description}`);
+
+  const result = await apiRequest('POST', '/api/v1/generate/generate-persona', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * 🎛️ Generate Mashup
+ * POST /api/v1/generate/mashup
+ */
+async function generateMashup({ audioUrl1, audioUrl2, prompt, style, title, customMode, instrumental, model, vocalGender, styleWeight, weirdnessConstraint, audioWeight, callbackUrl }) {
+  if (!audioUrl1 || !audioUrl2) {
+    console.error('❌ Parameter --audioUrl1 und --audioUrl2 (exakt 2 Audio URLs) sind erforderlich!');
+    process.exit(1);
+  }
+
+  const isCustom = customMode === 'true' || customMode === true || (style !== undefined || title !== undefined);
+
+  const body = {
+    uploadUrlList: [audioUrl1, audioUrl2],
+    customMode: isCustom,
+    model: normalizeModel(model || 'v5'),
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
+  };
+
+  if (isCustom) {
+    body.prompt = prompt || '';
+    body.style = style || 'mashup';
+    body.title = title || 'Echo Mashup Track';
+    body.instrumental = instrumental === 'true' || instrumental === true;
+    if (vocalGender) body.vocalGender = vocalGender;
+    if (styleWeight !== undefined) body.styleWeight = parseFloat(styleWeight);
+    if (weirdnessConstraint !== undefined) body.weirdnessConstraint = parseFloat(weirdnessConstraint);
+    if (audioWeight !== undefined) body.audioWeight = parseFloat(audioWeight);
+  } else {
+    body.prompt = prompt || 'Blend two audio tracks together';
+  }
+
+  console.log(`🎛️ Generiere Mashup aus 2 Audio-Tracks...`);
+  console.log(`   Audio 1: ${audioUrl1}`);
+  console.log(`   Audio 2: ${audioUrl2}`);
+
+  const result = await apiRequest('POST', '/api/v1/generate/mashup', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * 🔊 Generate Sound Effects
+ * POST /api/v1/generate/sounds
+ */
+async function generateSounds({ prompt, model, soundLoop, soundTempo, soundKey, grabLyrics, callbackUrl }) {
+  if (!prompt) {
+    console.error('❌ Parameter --prompt (Beschreibung des Sounds, max 500 Zeichen) ist erforderlich!');
+    process.exit(1);
+  }
+
+  const body = {
+    prompt: prompt.substring(0, 500),
+    model: 'V5',
+    soundLoop: soundLoop === 'true' || soundLoop === true,
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
+  };
+
+  if (soundTempo) body.soundTempo = parseInt(soundTempo, 10);
+  if (soundKey) body.soundKey = soundKey;
+  if (grabLyrics !== undefined) body.grabLyrics = grabLyrics === 'true' || grabLyrics === true;
+
+  console.log(`🔊 Generiere Soundeffekt / Ambient Loop...`);
+  console.log(`   Prompt: ${body.prompt}`);
+  console.log(`   Loop: ${body.soundLoop} | Tempo: ${body.soundTempo || 'Auto'} | Key: ${body.soundKey || 'Any'}`);
+
+  const result = await apiRequest('POST', '/api/v1/generate/sounds', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * 🎹 Generate MIDI from Audio
+ * POST /api/v1/midi/generate
+ */
+async function generateMidi({ taskId, audioId, callbackUrl }) {
+  if (!taskId) {
+    console.error('❌ Parameter --taskId (aus Stem Separation) ist erforderlich!');
+    process.exit(1);
+  }
+
+  const body = {
+    taskId,
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
+  };
+  if (audioId) body.audioId = audioId;
+
+  console.log(`🎹 Konvertiere getrennte Audiospuren in MIDI-Noten...`);
+  console.log(`   Task ID: ${taskId}${audioId ? ' | Audio ID: ' + audioId : ''}`);
+
+  const result = await apiRequest('POST', '/api/v1/midi/generate', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * 🎙️ Suno Voice Suite (Custom Voice Operations)
+ */
+async function voiceValidate({ voiceUrl, vocalStartS, vocalEndS, language, callbackUrl }) {
+  if (!voiceUrl || vocalStartS === undefined || vocalEndS === undefined) {
+    console.error('❌ Parameter --voiceUrl, --vocalStartS und --vocalEndS sind erforderlich!');
+    process.exit(1);
+  }
+
+  const body = {
+    voiceUrl,
+    vocalStartS: parseInt(vocalStartS, 10),
+    vocalEndS: parseInt(vocalEndS, 10),
+    language: language || 'de',
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
+  };
+
+  console.log(`🎙️ Suno Voice: Generiere Verifizierungs-Phrase...`);
+  console.log(`   Voice URL: ${voiceUrl} (${body.vocalStartS}s - ${body.vocalEndS}s)`);
+
+  const result = await apiRequest('POST', '/api/v1/voice/validate', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+async function voiceRegenerate({ taskId, callbackUrl }) {
+  if (!taskId) {
+    console.error('❌ Parameter --taskId ist erforderlich!');
+    process.exit(1);
+  }
+
+  const body = {
+    taskId,
+    calBackUrl: callbackUrl || 'https://api.example.com/callback',
+  };
+
+  console.log(`🎙️ Suno Voice: Generiere Verifizierungs-Phrase neu (Task ID: ${taskId})...`);
+  const result = await apiRequest('POST', '/api/v1/voice/regenerate', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+async function voiceCreate({ taskId, verifyUrl, voiceName, description, style, singerSkillLevel, callbackUrl }) {
+  if (!taskId || !verifyUrl) {
+    console.error('❌ Parameter --taskId und --verifyUrl sind erforderlich!');
+    process.exit(1);
+  }
+
+  const body = {
+    taskId,
+    verifyUrl,
+    voiceName: voiceName || 'My Voice',
+    description: description || 'Custom Suno Voice',
+    style: style || 'Pop',
+    singerSkillLevel: singerSkillLevel || 'beginner',
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
+  };
+
+  console.log(`🎙️ Suno Voice: Erstelle Custom Voice aus Gesangsaufnahme...`);
+  console.log(`   Task ID: ${taskId} | Verify URL: ${verifyUrl}`);
+
+  const result = await apiRequest('POST', '/api/v1/voice/generate', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+async function voiceCheck({ voiceId }) {
+  if (!voiceId) {
+    console.error('❌ Parameter --voiceId ist erforderlich!');
+    process.exit(1);
+  }
+
+  console.log(`🎙️ Suno Voice: Prüfe Verfügbarkeit für Voice ID ${voiceId}...`);
+  const result = await apiRequest('GET', `/api/v1/voice/check-voice?voiceId=${voiceId}`);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
  * 🎤 Separate Vocals & Stem Splitting
  * POST /api/v1/vocal-removal/generate
  */
 async function separateVocals({ taskId, audioId, type, callbackUrl }) {
   if (!taskId || !audioId) {
-    console.error('❌ Parameter --taskId und --audioId sind erforderlich!');
     process.exit(1);
   }
 
@@ -346,10 +594,203 @@ async function generateCover({ audioId, style, title, prompt, model, callbackUrl
 }
 
 /**
+ * 🎤 Add Vocals to Instrumental
+ * POST /api/v1/generate/add-vocals
+ */
+async function addVocals({ uploadUrl, prompt, title, style, negativeTags, vocalGender, styleWeight, weirdnessConstraint, audioWeight, model, callbackUrl }) {
+  if (!uploadUrl) {
+    console.error('❌ Parameter --uploadUrl ist erforderlich!');
+    process.exit(1);
+  }
+
+  const body = {
+    uploadUrl,
+    prompt: prompt || 'Soothing vocals',
+    title: title || 'Track with Vocals',
+    style: style || 'pop',
+    negativeTags: negativeTags || 'heavy metal',
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
+    model: normalizeModel(model || 'v5_5'),
+  };
+
+  if (vocalGender) body.vocalGender = vocalGender;
+  if (styleWeight !== undefined) body.styleWeight = parseFloat(styleWeight);
+  if (weirdnessConstraint !== undefined) body.weirdnessConstraint = parseFloat(weirdnessConstraint);
+  if (audioWeight !== undefined) body.audioWeight = parseFloat(audioWeight);
+
+  console.log(`🎤 Füge Vocals zur Audiodatei hinzu...`);
+  console.log(`   URL: ${uploadUrl}`);
+  console.log(`   Style: ${body.style} | Title: ${body.title}`);
+
+  const result = await apiRequest('POST', '/api/v1/generate/add-vocals', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * 🎸 Add Instrumental Accompaniment
+ * POST /api/v1/generate/add-instrumental
+ */
+async function addInstrumental({ uploadUrl, title, tags, style, negativeTags, vocalGender, styleWeight, weirdnessConstraint, audioWeight, model, callbackUrl }) {
+  if (!uploadUrl) {
+    console.error('❌ Parameter --uploadUrl ist erforderlich!');
+    process.exit(1);
+  }
+
+  const body = {
+    uploadUrl,
+    title: title || 'Track with Instrumental',
+    tags: tags || style || 'ambient, piano',
+    negativeTags: negativeTags || 'heavy metal',
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
+    model: normalizeModel(model || 'v5_5'),
+  };
+
+  if (vocalGender) body.vocalGender = vocalGender;
+  if (styleWeight !== undefined) body.styleWeight = parseFloat(styleWeight);
+  if (weirdnessConstraint !== undefined) body.weirdnessConstraint = parseFloat(weirdnessConstraint);
+  if (audioWeight !== undefined) body.audioWeight = parseFloat(audioWeight);
+
+  console.log(`🎸 Füge Instrumental-Begleitung zur Audiodatei hinzu...`);
+  console.log(`   URL: ${uploadUrl}`);
+  console.log(`   Tags: ${body.tags} | Title: ${body.title}`);
+
+  const result = await apiRequest('POST', '/api/v1/generate/add-instrumental', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * 📤 Transform Uploaded Audio to Cover
+ * POST /api/v1/generate/upload-cover
+ */
+async function uploadAndCover({ uploadUrl, prompt, style, title, customMode, instrumental, model, negativePrompt, vocalGender, styleWeight, weirdnessConstraint, audioWeight, callbackUrl }) {
+  if (!uploadUrl) {
+    console.error('❌ Parameter --uploadUrl ist erforderlich!');
+    process.exit(1);
+  }
+
+  const isCustom = customMode === 'true' || customMode === true || (style !== undefined || title !== undefined);
+
+  const body = {
+    uploadUrl,
+    customMode: isCustom,
+    instrumental: instrumental === 'true' || instrumental === true,
+    model: normalizeModel(model || 'v5_5'),
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
+  };
+
+  if (isCustom) {
+    body.prompt = prompt || '';
+    body.style = style || 'pop';
+    body.title = title || 'Uploaded Audio Cover';
+    if (negativePrompt) body.negativeTags = negativePrompt;
+    if (vocalGender) body.vocalGender = vocalGender;
+    if (styleWeight !== undefined) body.styleWeight = parseFloat(styleWeight);
+    if (weirdnessConstraint !== undefined) body.weirdnessConstraint = parseFloat(weirdnessConstraint);
+    if (audioWeight !== undefined) body.audioWeight = parseFloat(audioWeight);
+  } else {
+    body.prompt = prompt || 'Transform audio style';
+  }
+
+  console.log(`📤 Transformiere hochgeladene Audio zu neuem Cover...`);
+  console.log(`   URL: ${uploadUrl}`);
+
+  const result = await apiRequest('POST', '/api/v1/generate/upload-cover', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * ⏩ Upload And Extend Audio
+ * POST /api/v1/generate/upload-extend
+ */
+async function uploadAndExtend({ uploadUrl, prompt, style, title, continueAt, defaultParamFlag, model, negativePrompt, vocalGender, styleWeight, weirdnessConstraint, audioWeight, personaId, personaModel, callbackUrl }) {
+  if (!uploadUrl) {
+    console.error('❌ Parameter --uploadUrl ist erforderlich!');
+    process.exit(1);
+  }
+
+  const isCustom = defaultParamFlag === 'true' || defaultParamFlag === true || (continueAt !== undefined || prompt !== undefined || style !== undefined);
+
+  const body = {
+    uploadUrl,
+    defaultParamFlag: isCustom,
+    model: normalizeModel(model || 'v5_5'),
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
+  };
+
+  if (isCustom) {
+    body.continueAt = parseFloat(continueAt || 60);
+    body.prompt = prompt || '';
+    body.style = style || 'pop';
+    body.title = title || 'Uploaded Audio Extension';
+    if (negativePrompt) body.negativeTags = negativePrompt;
+    if (vocalGender) body.vocalGender = vocalGender;
+    if (styleWeight !== undefined) body.styleWeight = parseFloat(styleWeight);
+    if (weirdnessConstraint !== undefined) body.weirdnessConstraint = parseFloat(weirdnessConstraint);
+    if (audioWeight !== undefined) body.audioWeight = parseFloat(audioWeight);
+    if (personaId) body.personaId = personaId;
+    if (personaModel) body.personaModel = personaModel;
+  } else {
+    body.prompt = prompt || 'Extend audio';
+  }
+
+  console.log(`⏩ Verlängere hochgeladene Audiodatei...`);
+  console.log(`   URL: ${uploadUrl}`);
+  if (isCustom) console.log(`   Continue at: ${body.continueAt}s | Style: ${body.style}`);
+
+  const result = await apiRequest('POST', '/api/v1/generate/upload-extend', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * ⏱️ Get Timestamped Lyrics & Waveform
+ * POST /api/v1/generate/get-timestamped-lyrics
+ */
+async function getTimestampedLyrics({ taskId, audioId }) {
+  if (!taskId || !audioId) {
+    console.error('❌ Parameter --taskId und --audioId sind erforderlich!');
+    process.exit(1);
+  }
+
+  const body = { taskId, audioId };
+
+  console.log(`⏱️ Rufe zeitgestempelte Lyrics (Karaoke Sync) & Wellenform ab...`);
+  console.log(`   Task ID: ${taskId} | Audio ID: ${audioId}`);
+
+  const result = await apiRequest('POST', '/api/v1/generate/get-timestamped-lyrics', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * ✨ Boost Music Style (V4.5+ Conversational Prompts)
+ * POST /api/v1/style/generate
+ */
+async function boostStyle({ content, style }) {
+  const text = content || style;
+  if (!text) {
+    console.error('❌ Parameter --content (oder --style) ist erforderlich!');
+    process.exit(1);
+  }
+
+  const body = { content: text };
+
+  console.log(`✨ Optimiere & booste Musikstil-Prompt...`);
+  console.log(`   Input: ${text}`);
+
+  const result = await apiRequest('POST', '/api/v1/style/generate', body);
+  console.log('✅ Antwort:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
  * 🎬 Create Music Video
  * POST /api/v1/mp4/generate
  */
-async function createMusicVideo({ taskId, audioId, author, title, callbackUrl }) {
+async function createMusicVideo({ taskId, audioId, author, domainName, callbackUrl }) {
   if (!taskId || !audioId) {
     console.error('❌ Parameter --taskId und --audioId sind erforderlich!');
     process.exit(1);
@@ -358,13 +799,15 @@ async function createMusicVideo({ taskId, audioId, author, title, callbackUrl })
   const body = {
     taskId,
     audioId,
-    author: author || 'Echo',
-    title: title || 'Music Video',
-    callBackUrl: callbackUrl || 'https://api.sunoapi.org/placeholder-callback',
+    callBackUrl: callbackUrl || 'https://api.example.com/callback',
   };
+  if (author) body.author = author;
+  if (domainName) body.domainName = domainName;
 
   console.log(`🎬 Generiere MP4 Musikvideo...`);
   console.log(`   Task ID: ${taskId} | Audio ID: ${audioId}`);
+  if (author) console.log(`   Author: ${author}`);
+  if (domainName) console.log(`   Domain: ${domainName}`);
 
   const result = await apiRequest('POST', '/api/v1/mp4/generate', body);
   console.log('✅ Antwort:', JSON.stringify(result, null, 2));
@@ -392,9 +835,9 @@ async function generateLyrics({ prompt, style, title }) {
 }
 
 /**
- * 📤 Upload File (Base64 / URL / File stream)
+ * 📤 Upload File (Base64 / URL / File Stream Multipart)
  */
-async function uploadFile({ url, filePath, uploadPath, fileName, base64 }) {
+async function uploadFile({ url, filePath, uploadPath, fileName, base64, stream }) {
   uploadPath = uploadPath || 'audio/uploads';
 
   if (url) {
@@ -407,6 +850,56 @@ async function uploadFile({ url, filePath, uploadPath, fileName, base64 }) {
     const result = await apiRequest('POST', '/api/file-url-upload', body, FILE_UPLOAD_BASE);
     console.log('✅ Upload Antwort:', JSON.stringify(result, null, 2));
     return result;
+  }
+
+  if (stream || (filePath && fs.statSync(filePath).size > 10 * 1024 * 1024)) {
+    if (!filePath || !fs.existsSync(filePath)) {
+      console.error(`❌ Lokale Datei für Stream Upload nicht gefunden: ${filePath}`);
+      process.exit(1);
+    }
+    const name = fileName || path.basename(filePath);
+    console.log(`🌊 Stream Multipart Upload für große Datei: ${name}...`);
+
+    return new Promise((resolve, reject) => {
+      const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+      const url = new URL('/api/file-stream-upload', FILE_UPLOAD_BASE);
+
+      const req = https.request({
+        method: 'POST',
+        hostname: url.hostname,
+        port: 443,
+        path: url.pathname,
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        },
+      }, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data);
+            console.log('✅ Stream Upload Antwort:', JSON.stringify(parsed, null, 2));
+            resolve(parsed);
+          } catch {
+            resolve({ raw: data });
+          }
+        });
+      });
+
+      req.on('error', reject);
+
+      req.write(`--${boundary}\r\nContent-Disposition: form-data; name="uploadPath"\r\n\r\n${uploadPath}\r\n`);
+      req.write(`--${boundary}\r\nContent-Disposition: form-data; name="fileName"\r\n\r\n${name}\r\n`);
+      req.write(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${name}"\r\nContent-Type: application/octet-stream\r\n\r\n`);
+
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.on('data', chunk => req.write(chunk));
+      fileStream.on('end', () => {
+        req.write(`\r\n--${boundary}--\r\n`);
+        req.end();
+      });
+    });
   }
 
   if (base64 || filePath) {
@@ -452,6 +945,9 @@ async function getStatus(taskId, type = 'music') {
   else if (type === 'vocal') endpoint = `/api/v1/vocal-removal/record-info?taskId=${taskId}`;
   else if (type === 'video') endpoint = `/api/v1/mp4/record-info?taskId=${taskId}`;
   else if (type === 'cover') endpoint = `/api/v1/generate/cover/record-info?taskId=${taskId}`;
+  else if (type === 'midi') endpoint = `/api/v1/midi/record-info?taskId=${taskId}`;
+  else if (type === 'voice') endpoint = `/api/v1/voice/record-info?taskId=${taskId}`;
+  else if (type === 'voice-validate') endpoint = `/api/v1/voice/validate-phrase/record-info?taskId=${taskId}`;
 
   console.log(`📋 Abfrage Status (${type}) für Task ID: ${taskId}...`);
   const result = await apiRequest('GET', endpoint);
@@ -503,13 +999,27 @@ Verwendung:
 Commands:
   generate     🎵 Musik generieren (Custom Mode mit Prompt, Style & Lyrics)
   extend       ⏩ Musik verlängern (ab Sekunde X fortsetzen)
+  replace      ✂️ Musik-Abschnitt ersetzen (Replace Section: infillStartS / infillEndS)
   separate     🎤 Stem Separation (Vocal/Instrumental [2 stems] oder Full Instruments [12 stems])
   wav          🎧 Musik in HQ WAV-Format konvertieren
-  cover        🔁 Cover-Version im neuen Style/Genre generieren
-  video        🎬 MP4 Musikvideo aus Audiospur erstellen
-  lyrics       ✍️ Nur Songtexte generieren
-  upload       📤 Audio-Datei per URL oder Base64 hochladen
-  status       📋 Status eines Tasks abrufen (--type music|lyrics|wav|vocal|video|cover)
+  cover              🔁 Cover-Version im neuen Style/Genre generieren
+  persona            👤 Wiederverwendbare Musik-Persona erstellen (--taskId --audioId --name --description)
+  mashup             🎛️ Zwei Audio-Dateien zu neuem Mashup verschmelzen (--audioUrl1 --audioUrl2)
+  sounds             🔊 Soundeffekte & Ambient Loops generieren (--prompt --soundLoop --soundTempo --soundKey)
+  midi               🎹 Getrennte Stems in MIDI-Notendaten konvertieren (--taskId)
+  voice-validate     🎙️ Suno Voice: Verifizierungs-Phrase anfordern
+  voice-create       🎙️ Suno Voice: Custom Voice aus Aufnahme erstellen (--taskId --verifyUrl)
+  voice-check        🎙️ Suno Voice: Verfügbarkeit einer Voice ID prüfen (--voiceId)
+  add-vocals         🎤 Vocals zu einer existierenden Instrumental-Spur hinzufügen (--uploadUrl)
+  add-instrumental   🎸 Instrumental-Begleitung zu einer Vocals/Melodie-Spur hinzufügen (--uploadUrl)
+  upload-cover       📤 Hochgeladene Audiodatei in ein neues Cover transformieren (--uploadUrl)
+  upload-extend      ⏩ Hochgeladene Audiodatei mit beibehaltenem Stil verlängern (--uploadUrl)
+  timestamped-lyrics ⏱️ Zeitgestempelte Lyrics (Karaoke-Sync) & Wellenform-Daten abrufen
+  boost-style        ✨ Musikstil-Prompt mit V4.5+ Conversational Booster verfeinern (--content)
+  video              🎬 MP4 Musikvideo aus Audiospur erstellen
+  lyrics             ✍️ Nur Songtexte generieren
+  upload             📤 Audio-Datei per URL, Base64 oder Multipart Stream uploaden (--stream)
+  status             📋 Status eines Tasks abrufen (--type music|lyrics|wav|vocal|video|cover|midi|voice|voice-validate)
   credits      💰 Verbleibende Credits prüfen
   models       🎭 Verfügbare AI-Modelle anzeigen
   help         📖 Diese Hilfe anzeigen
@@ -517,6 +1027,7 @@ Commands:
 Examples:
   node suno-client.mjs generate --prompt "Cyberpunk Synthwave" --lyrics "FILE:echo/lyrics-echos-hymn.txt" --artist "Kitty Kat"
   node suno-client.mjs extend --audioId "e231****-****" --continueAt 60 --prompt "Epic Heavy Drop"
+  node suno-client.mjs replace --taskId "2fac****" --audioId "e231****" --infillStartS 10.5 --infillEndS 25.0 --prompt "Neuer Refrain" --tags "synthwave"
   node suno-client.mjs separate --taskId "5c79****" --audioId "e231****" --type split_stem
   node suno-client.mjs wav --taskId "5c79****" --audioId "e231****"
   node suno-client.mjs cover --audioId "e231****" --style "acoustic guitar ballad"
@@ -557,6 +1068,9 @@ async function main() {
       case 'extend':
         await extendMusic(options);
         break;
+      case 'replace':
+        await replaceSection(options);
+        break;
       case 'separate':
         await separateVocals(options);
         break;
@@ -565,6 +1079,48 @@ async function main() {
         break;
       case 'cover':
         await generateCover(options);
+        break;
+      case 'persona':
+        await generatePersona(options);
+        break;
+      case 'mashup':
+        await generateMashup(options);
+        break;
+      case 'sounds':
+        await generateSounds(options);
+        break;
+      case 'midi':
+        await generateMidi(options);
+        break;
+      case 'voice-validate':
+        await voiceValidate(options);
+        break;
+      case 'voice-create':
+        await voiceCreate(options);
+        break;
+      case 'voice-check':
+        await voiceCheck(options);
+        break;
+      case 'add-vocals':
+        await addVocals(options);
+        break;
+      case 'add-instrumental':
+        await addInstrumental(options);
+        break;
+      case 'upload-cover':
+        await uploadAndCover(options);
+        break;
+      case 'upload-extend':
+        await uploadAndExtend(options);
+        break;
+      case 'voice-regenerate':
+        await voiceRegenerate(options);
+        break;
+      case 'timestamped-lyrics':
+        await getTimestampedLyrics(options);
+        break;
+      case 'boost-style':
+        await boostStyle(options);
         break;
       case 'video':
         await createMusicVideo(options);

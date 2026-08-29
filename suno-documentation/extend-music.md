@@ -1,5 +1,4 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
@@ -9,21 +8,22 @@
 
 ### Parameter Usage Guide
 
-- When defaultParamFlag is true (Custom Parameters):
-  - prompt, style, title and continueAt are required
-  - Prompt length limit:
-    - For V4 model: 3000 characters
-    - For V4_5, V4_5PLUS, V4_5ALL, V5 and V5_5 models: 5000 characters
-  - Style length limit:
-    - For V4 model: 200 characters
-    - For V4_5, V4_5PLUS, V4_5ALL, V5 and V5_5 models: 1000 characters
-  - Title length limit:
-    - For V4 and V4_5ALL model: 80 characters
-    - For V4_5, V4_5PLUS, V5 and V5_5 models: 100 characters
+* When defaultParamFlag is true (Custom Parameters):
+  * style, title and continueAt are required
+  * When `instrumental` is true, do not provide `prompt` or `vocalGender`
+  * Prompt length limit:
+    * For V4 model: 3000 characters
+    * For V4\_5, V4\_5PLUS, V4\_5ALL, V5 and V5\_5 models: 5000 characters
+  * Style length limit:
+    * For V4 model: 200 characters
+    * For V4\_5, V4\_5PLUS, V4\_5ALL, V5 and V5\_5 models: 1000 characters
+  * Title length limit:
+    * For V4 and V4\_5ALL model: 80 characters
+    * For V4\_5, V4\_5PLUS, V5 and V5\_5 models: 100 characters
 
-- When defaultParamFlag is false (Use Default Parameters):
-  - Only audioId is required
-  - Other parameters will use the original audio's parameters
+* When defaultParamFlag is false (Use Default Parameters):
+  * Only audioId is required
+  * Other parameters will use the original audio's parameters
 
 ### Optional Parameters
 
@@ -38,9 +38,10 @@
 2. Model version must be consistent with the source music
 3. This feature is ideal for creating longer compositions by extending existing tracks
 
+
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/generate/extend
+````yaml suno-api/suno-api.json POST /api/v1/generate/extend
 openapi: 3.0.0
 info:
   title: intro
@@ -90,11 +91,20 @@ paths:
                     Controls parameter usage mode.  
 
                     - `true`: Use custom parameters (requires `continueAt`,
-                    `prompt`, `style`, and `title`).  
+                    `style`, and `title`; `prompt` is also required when
+                    `instrumental` is `false`).  
 
                     - `false`: Use original audio parameters (only `audioId` is
                     required).
                   example: true
+                instrumental:
+                  type: boolean
+                  description: >-
+                    Whether the music is instrumental (without vocals). If
+                    `true`, the `prompt` and `vocalGender` parameters must not
+                    be provided. Optional. Defaults to `false`.
+                  default: false
+                  example: false
                 audioId:
                   type: string
                   description: >-
@@ -105,7 +115,8 @@ paths:
                   type: string
                   description: >-
                     Description of how the music should be extended. Required
-                    when defaultParamFlag is true.
+                    when `defaultParamFlag` is `true` and `instrumental` is
+                    `false`. Must not be provided when `instrumental` is `true`.
                   example: Extend the music with more relaxing notes
                 style:
                   type: string
@@ -191,7 +202,10 @@ paths:
                   example: Relaxing Piano
                 vocalGender:
                   type: string
-                  description: Preferred vocal gender for generated vocals. Optional.
+                  description: >-
+                    Preferred vocal gender for generated vocals. Optional when
+                    `instrumental` is `false`; must not be provided when
+                    `instrumental` is `true`.
                   enum:
                     - m
                     - f
@@ -234,13 +248,13 @@ paths:
                     details endpoint to poll task status
                   example: https://api.example.com/callback
       responses:
-        "200":
+        '200':
           description: Request successful
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -250,11 +264,11 @@ paths:
                             type: string
                             description: Task ID for tracking task status
                             example: 5c79****be8e
-        "500":
-          $ref: "#/components/responses/Error"
+        '500':
+          $ref: '#/components/responses/Error'
       callbacks:
         audioExtend:
-          "{$request.body#/callBackUrl}":
+          '{$request.body#/callBackUrl}':
             post:
               description: >-
                 System will call this callback when audio generation is
@@ -368,11 +382,11 @@ paths:
                                     type: number
                                     description: Audio duration (seconds)
               responses:
-                "200":
+                '200':
                   description: Callback received successfully
               method: post
               type: path
-            path: "{$request.body#/callBackUrl}"
+            path: '{$request.body#/callBackUrl}'
 components:
   schemas:
     ApiResponse:
@@ -450,4 +464,5 @@ components:
 
         > - If you suspect your API Key has been compromised, reset it
         immediately from the management page
+
 ````

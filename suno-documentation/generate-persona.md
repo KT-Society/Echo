@@ -1,5 +1,4 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
@@ -9,36 +8,36 @@
 
 ### Usage Guide
 
-- Use this endpoint to create Personas (music characters) for generated music
-- Requires the taskId from supported music generation endpoints (generate, extend, mashup) and audio ID
-- Customize the Persona name and description to give music unique personality
-- Generated Personas can be used for subsequent music creation and style transfer
-- Optionally specify vocalStart and vocalEnd to define the time range (10-30 seconds) for analysis. If not provided, defaults to 0.0 and 30.0 respectively
+* Use this endpoint to create Personas (music characters) for generated music
+* Requires the taskId from supported music generation endpoints (generate, extend, mashup) and audio ID
+* Customize the Persona name and description to give music unique personality
+* Generated Personas can be used for subsequent music creation and style transfer
+* Optionally specify vocalStart and vocalEnd to define the time range (10-30 seconds) for analysis. If not provided, defaults to 0.0 and 30.0 respectively
 
 ### Parameter Details
 
-- `taskId`: Required parameter, can be obtained from the following endpoints:
-  - [Generate Music](./generate-music) (`/api/v1/generate`)
-  - [Extend Music](./extend-music) (`/api/v1/generate/extend`)
-- `audioId`: Required parameter, specifies the audio ID to create Persona for
-- `name`: Required parameter, assigns an easily recognizable name to the Persona
-- `description`: Required parameter, describes the Persona's musical characteristics, style, and personality
-- `vocalStart`: Optional parameter, start time (in seconds) of the audio segment to analyze. Default value is 0.0. Must be between 0 and the audio duration, and the segment length (vocalEnd - vocalStart) must be between 10-30 seconds.
-- `vocalEnd`: Optional parameter, end time (in seconds) of the audio segment to analyze. Default value is 30.0. Must be between 0 and the audio duration, and the segment length (vocalEnd - vocalStart) must be between 10-30 seconds.
-- `style`: Optional parameter, music style label to help categorize the Persona
+* `taskId`: Required parameter, can be obtained from the following endpoints:
+  * [Generate Music](./generate-music) (`/api/v1/generate`)
+  * [Extend Music](./extend-music) (`/api/v1/generate/extend`)
+* `audioId`: Required parameter, specifies the audio ID to create Persona for
+* `name`: Required parameter, assigns an easily recognizable name to the Persona
+* `description`: Required parameter, describes the Persona's musical characteristics, style, and personality
+* `vocalStart`: Optional parameter, start time (in seconds) of the audio segment to analyze. Default value is 0.0. Must be between 0 and the audio duration, and the segment length (vocalEnd - vocalStart) must be between 10-30 seconds.
+* `vocalEnd`: Optional parameter, end time (in seconds) of the audio segment to analyze. Default value is 30.0. Must be between 0 and the audio duration, and the segment length (vocalEnd - vocalStart) must be between 10-30 seconds.
+* `style`: Optional parameter, music style label to help categorize the Persona
 
 ### Developer Notes
 
-- **Important**: Ensure the music generation task is fully completed before calling this endpoint. If the music is still generating, this endpoint will return a failure
-- **Model Requirement**: Persona generation supports taskId from music generated with models V4 and above
-- It is recommended to provide detailed descriptions for Personas to better capture musical characteristics
-- The returned `personaId` can be used in subsequent music generation requests to create music with similar style characteristics
-- You can apply the `personaId` to the following endpoints:
-  - [Generate Music](./generate-music)
-  - [Extend Music](./extend-music)
-  - [Upload And Cover Audio](./upload-and-cover-audio)
-  - [Upload And Extend Audio](./upload-and-extend-audio)
-- Each audio ID can only generate a Persona once
+* **Important**: Ensure the music generation task is fully completed before calling this endpoint. If the music is still generating, this endpoint will return a failure
+* **Model Requirement**: Persona generation supports taskId from music generated with models V4 and above
+* It is recommended to provide detailed descriptions for Personas to better capture musical characteristics
+* The returned `personaId` can be used in subsequent music generation requests to create music with similar style characteristics
+* You can apply the `personaId` to the following endpoints:
+  * [Generate Music](./generate-music)
+  * [Extend Music](./extend-music)
+  * [Upload And Cover Audio](./upload-and-cover-audio)
+  * [Upload And Extend Audio](./upload-and-extend-audio)
+* Each audio ID can only generate a Persona once
 
 ### Parameter Example
 
@@ -53,18 +52,17 @@
   }
   ```
 
-```json With Custom Time Range theme={null}
-{
-  "taskId": "5c79****be8e",
-  "audioId": "e231****-****-****-****-****8cadc7dc",
-  "name": "Electronic Pop Singer",
-  "description": "A modern electronic music style pop singer, skilled in dynamic rhythms and synthesizer tones",
-  "vocalStart": 10,
-  "vocalEnd": 30,
-  "style": "Electronic Pop"
-}
-```
-
+  ```json With Custom Time Range theme={null}
+  {
+    "taskId": "5c79****be8e",
+    "audioId": "e231****-****-****-****-****8cadc7dc",
+    "name": "Electronic Pop Singer",
+    "description": "A modern electronic music style pop singer, skilled in dynamic rhythms and synthesizer tones",
+    "vocalStart": 10,
+    "vocalEnd": 30,
+    "style": "Electronic Pop"
+  }
+  ```
 </CodeGroup>
 
 <Note>
@@ -75,9 +73,10 @@
   Providing detailed and specific descriptions for Personas helps the system more accurately capture musical style characteristics.
 </Tip>
 
+
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/generate/generate-persona
+````yaml suno-api/suno-api.json POST /api/v1/generate/generate-persona
 openapi: 3.0.0
 info:
   title: intro
@@ -178,7 +177,7 @@ paths:
                   description: Music style label to help categorize the Persona. Optional.
                   example: Electronic Pop
       responses:
-        "200":
+        '200':
           description: Request successful
           content:
             application/json:
@@ -265,8 +264,8 @@ paths:
                             example: >-
                               A modern electronic music style pop singer,
                               skilled in dynamic rhythms and synthesizer tones
-        "500":
-          $ref: "#/components/responses/Error"
+        '500':
+          $ref: '#/components/responses/Error'
 components:
   responses:
     Error:
@@ -309,4 +308,5 @@ components:
 
         > - If you suspect your API Key has been compromised, reset it
         immediately from the management page
+
 ````

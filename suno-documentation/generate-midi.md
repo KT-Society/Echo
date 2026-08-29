@@ -38,7 +38,7 @@
 
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/midi/generate
+````yaml suno-api/suno-api.json POST /api/v1/midi/generate
 openapi: 3.0.0
 info:
   title: intro

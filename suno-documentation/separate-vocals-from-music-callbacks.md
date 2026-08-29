@@ -73,7 +73,48 @@ When the task is completed, the system will send different format callback data 
   }
   ```
 
-  ```json Failure Callback theme={null}
+  ````json split_stem_advanced Type  Success Callback theme={null}
+  {
+    "code": 200,
+    "msg": "vocal Removal generated successfully.",
+    "data": {
+      "task_id": "7220be2955295dda60de46ec6e4ead4c",
+      "vocal_removal_info": {
+        "origin_data": [
+          {
+            "extract": {
+              "duration": 194.92,
+              "audio_url": "https://tempfile.aiquickdraw.com/r/eb7d0f18-8349-4735-a65e-1812705d5ddf_Lead Vocal.mp3",
+              "stem_type_group_name": "Lead Vocal",
+              "id": "eb7d0f18-8349-4735-a65e-1812705d5ddf"
+            },
+            "remove": {
+              "duration": 194.92,
+              "audio_url": "https://tempfile.aiquickdraw.com/r/706d32df-e988-412e-bce4-42c9302e5478_Lead Vocal.mp3",
+              "stem_type_group_name": "Lead Vocal",
+              "id": "706d32df-e988-412e-bce4-42c9302e5478"
+            }
+          },
+          {
+            "extract": {
+              "duration": 194.92,
+              "audio_url": "https://tempfile.aiquickdraw.com/r/a7c503f6-1265-4f7e-bf5d-c50fb3b07238_Lead Vocal.mp3",
+              "stem_type_group_name": "Lead Vocal",
+              "id": "a7c503f6-1265-4f7e-bf5d-c50fb3b07238"
+            },
+            "remove": {
+              "duration": 194.92,
+              "audio_url": "https://tempfile.aiquickdraw.com/r/a3a0c954-1980-410f-9b34-8539b8eb23f8_Lead Vocal.mp3",
+              "stem_type_group_name": "Lead Vocal",
+              "id": "a3a0c954-1980-410f-9b34-8539b8eb23f8"
+            }
+          }
+        ]
+      }
+    }
+  }
+
+  ```json Failure Callback
   {
     "code": 400,
     "msg": "Vocal separation failed",
@@ -82,7 +123,7 @@ When the task is completed, the system will send different format callback data 
       "vocal_removal_info": null
     }
   }
-  ```
+  ````
 </CodeGroup>
 
 ## Status Code Description
@@ -176,6 +217,52 @@ When the task is completed, the system will send different format callback data 
 
 <ParamField path="data.vocal_removal_info.woodwinds_url" type="string">
   Woodwinds audio file URL
+</ParamField>
+
+### split\_stem\_advanced Type Field Description
+
+<ParamField path="data.vocal_removal_info.origin_data" type="array">
+  An array of separation results for the original audio, containing extraction and removal information for multiple stem groups. Each element represents an independent stem group (e.g., Lead Vocal).
+</ParamField>
+
+<ParamField path="data.vocal_removal_info.origin_data[].extract" type="object">
+  Information about the extracted target stem (isolates this stem while removing others).
+</ParamField>
+
+<ParamField path="data.vocal_removal_info.origin_data[].extract.duration" type="number">
+  The duration of the extracted audio, in seconds.
+</ParamField>
+
+<ParamField path="data.vocal_removal_info.origin_data[].extract.audio_url" type="string">
+  The download URL of the extracted target stem audio file.
+</ParamField>
+
+<ParamField path="data.vocal_removal_info.origin_data[].extract.stem_type_group_name" type="string">
+  The stem type group name (e.g., Lead Vocal), indicating which type of stem this group extracts.
+</ParamField>
+
+<ParamField path="data.vocal_removal_info.origin_data[].extract.id" type="string">
+  The unique identifier for the extracted audio.
+</ParamField>
+
+<ParamField path="data.vocal_removal_info.origin_data[].remove" type="object">
+  Information about the remaining audio after removing the target stem (removes this stem while keeping others).
+</ParamField>
+
+<ParamField path="data.vocal_removal_info.origin_data[].remove.duration" type="number">
+  The duration of the audio after removal, in seconds.
+</ParamField>
+
+<ParamField path="data.vocal_removal_info.origin_data[].remove.audio_url" type="string">
+  The download URL of the remaining audio file after the target stem has been removed.
+</ParamField>
+
+<ParamField path="data.vocal_removal_info.origin_data[].remove.stem_type_group_name" type="string">
+  The stem type group name (e.g., Lead Vocal), consistent with the corresponding extract entry.
+</ParamField>
+
+<ParamField path="data.vocal_removal_info.origin_data[].remove.id" type="string">
+  The unique identifier for the remaining audio.
 </ParamField>
 
 ## Callback Reception Examples

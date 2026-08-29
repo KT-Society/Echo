@@ -1,5 +1,4 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
@@ -9,41 +8,41 @@
 
 ### **Key Capabilities**
 
-- Accepts uploadUrl of an existing audio file (usually vocals or stems).
-- Supports fine-grained customization via parameters such as:
-  - tags and negativeTags (musical style controls)
-  - styleWeight, audioWeight, weirdnessConstraint (stylistic & creative blending)
-  - vocalGender, title, callBackUrl for metadata & workflow control  .
-- Returns a taskId for tracking, and results are retained for 14 days. Callback workflow includes three stages: text, first, and complete  .
+* Accepts uploadUrl of an existing audio file (usually vocals or stems).
+* Supports fine-grained customization via parameters such as:
+  * tags and negativeTags (musical style controls)
+  * styleWeight, audioWeight, weirdnessConstraint (stylistic & creative blending)
+  * vocalGender, title, callBackUrl for metadata & workflow control  .
+* Returns a taskId for tracking, and results are retained for 14 days. Callback workflow includes three stages: text, first, and complete  .
 
 ### **Typical Use Cases**
 
-- Singers or melody writers who want instant fuller arrangements around their vocal inputs.
-- Applications like karaoke platforms, demo-generation tools, or co-creation interfaces that allow users to experiment with accompaniment styles easily.
+* Singers or melody writers who want instant fuller arrangements around their vocal inputs.
+* Applications like karaoke platforms, demo-generation tools, or co-creation interfaces that allow users to experiment with accompaniment styles easily.
 
 ### Parameter Usage Guide
 
 Required parameters for all requests:
 
-- `uploadUrl`: Valid audio file URL (MP3, WAV, or other supported formats)
-- `title`: Title for the generated instrumental track (max 100 characters)
-- `tags`: Desired style and characteristics for the instrumental
-- `negativeTags`: Styles or instruments to exclude
-- `callBackUrl`: URL to receive completion notifications
+* `uploadUrl`: Valid audio file URL (MP3, WAV, or other supported formats)
+* `title`: Title for the generated instrumental track (max 100 characters)
+* `tags`: Desired style and characteristics for the instrumental
+* `negativeTags`: Styles or instruments to exclude
+* `callBackUrl`: URL to receive completion notifications
 
 Optional parameters for enhanced control:
 
-- `vocalGender`: Preferred vocal gender for any vocal elements ('m' or 'f')
-- `styleWeight`: Style adherence weight (0.00-1.00)
-- `weirdnessConstraint`: Creativity/novelty constraint (0.00-1.00)
-- `audioWeight`: Audio consistency weight (0.00-1.00)
-- `model`: Model version used for generation. Allowed values: `V4_5PLUS` (default), `V5`, `V5_5`
+* `vocalGender`: Preferred vocal gender for any vocal elements ('m' or 'f')
+* `styleWeight`: Style adherence weight (0.00-1.00)
+* `weirdnessConstraint`: Creativity/novelty constraint (0.00-1.00)
+* `audioWeight`: Audio consistency weight (0.00-1.00)
+* `model`: Model version used for generation. Allowed values: `V4_5PLUS` (default), `V5`, `V5_5`
 
 Audio requirements:
 
-- File Format: MP3, WAV, or other supported audio formats
-- Quality: Higher quality input generally produces better instrumental results
-- Accessibility: Ensure uploaded audio URLs are publicly accessible and stable
+* File Format: MP3, WAV, or other supported audio formats
+* Quality: Higher quality input generally produces better instrumental results
+* Accessibility: Ensure uploaded audio URLs are publicly accessible and stable
 
 ### Developer Notes
 
@@ -54,9 +53,10 @@ Audio requirements:
 5. Callback process has three stages: text (text generation), first (first track complete), complete (all tracks complete)
 6. You can use the Get Music Generation Details endpoint to actively check task status instead of waiting for callbacks
 
+
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/generate/add-instrumental
+````yaml suno-api/suno-api.json POST /api/v1/generate/add-instrumental
 openapi: 3.0.0
 info:
   title: intro
@@ -215,13 +215,13 @@ paths:
                   default: V4_5PLUS
                   example: V4_5PLUS
       responses:
-        "200":
+        '200':
           description: Request successful
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -231,11 +231,11 @@ paths:
                             type: string
                             description: Task ID for tracking task status
                             example: 5c79****be8e
-        "500":
-          $ref: "#/components/responses/Error"
+        '500':
+          $ref: '#/components/responses/Error'
       callbacks:
         instrumentalAdded:
-          "{request.body#/callBackUrl}":
+          '{request.body#/callBackUrl}':
             post:
               description: >-
                 System will call this callback when instrumental generation is
@@ -349,11 +349,11 @@ paths:
                                     type: number
                                     description: Audio duration (seconds)
               responses:
-                "200":
+                '200':
                   description: Callback received successfully
               method: post
               type: path
-            path: "{request.body#/callBackUrl}"
+            path: '{request.body#/callBackUrl}'
 components:
   schemas:
     ApiResponse:
@@ -431,4 +431,5 @@ components:
 
         > - If you suspect your API Key has been compromised, reset it
         immediately from the management page
+
 ````

@@ -33,7 +33,7 @@
 
 ## OpenAPI
 
-````yaml /file-upload-api/file-upload-api.json POST /api/file-base64-upload
+````yaml file-upload-api/file-upload-api.json POST /api/file-base64-upload
 openapi: 3.0.0
 info:
   title: File Upload API

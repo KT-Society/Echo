@@ -25,7 +25,7 @@ Used for creating a sound generation task (Sounds Task). It supports settings fo
 
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/generate/sounds
+````yaml suno-api/suno-api.json POST /api/v1/generate/sounds
 openapi: 3.0.0
 info:
   title: intro

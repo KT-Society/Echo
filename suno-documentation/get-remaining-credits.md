@@ -23,7 +23,7 @@
 
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json GET /api/v1/generate/credit
+````yaml suno-api/suno-api.json GET /api/v1/generate/credit
 openapi: 3.0.0
 info:
   title: intro

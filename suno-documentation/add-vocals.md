@@ -1,5 +1,4 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
@@ -9,42 +8,42 @@
 
 ### **Key Capabilities**
 
-- Accepts an existing instrumental via uploadUrl, with optional prompt-based stylistic input.
-- Supports control parameters including:
-  - prompt, style, tags, negativeTags (define lyrical content and vocal style)
-  - vocalGender, styleWeight, weirdnessConstraint, audioWeight, callBackUrl  .
-- Returns a taskId, supports the same 14-day retention and three-stage callback model as the instrumental endpoint  .
+* Accepts an existing instrumental via uploadUrl, with optional prompt-based stylistic input.
+* Supports control parameters including:
+  * prompt, style, tags, negativeTags (define lyrical content and vocal style)
+  * vocalGender, styleWeight, weirdnessConstraint, audioWeight, callBackUrl  .
+* Returns a taskId, supports the same 14-day retention and three-stage callback model as the instrumental endpoint  .
 
 ### **Typical Use Cases**
 
-- Music platforms or tools enabling topline creation and rapid prototyping of lyrical ideas.
-- Collaborative songwriting or co-creation workflows, where lyrics or vocal styles are iteratively tested over instrumental drafts.
+* Music platforms or tools enabling topline creation and rapid prototyping of lyrical ideas.
+* Collaborative songwriting or co-creation workflows, where lyrics or vocal styles are iteratively tested over instrumental drafts.
 
 ### Parameter Usage Guide
 
 Required parameters for all requests:
 
-- `uploadUrl`: Valid instrumental audio file URL
-- `prompt`: Description of the desired vocal content and style
-- `title`: Title for the generated vocal track (max 100 characters)
-- `style`: Music and vocal style (e.g., "Jazz", "Pop", "Classical")
-- `negativeTags`: Vocal styles or characteristics to exclude
-- `callBackUrl`: URL to receive completion notifications
+* `uploadUrl`: Valid instrumental audio file URL
+* `prompt`: Description of the desired vocal content and style
+* `title`: Title for the generated vocal track (max 100 characters)
+* `style`: Music and vocal style (e.g., "Jazz", "Pop", "Classical")
+* `negativeTags`: Vocal styles or characteristics to exclude
+* `callBackUrl`: URL to receive completion notifications
 
 Optional parameters for enhanced control:
 
-- `vocalGender`: Preferred vocal gender ('m' for male, 'f' for female)
-- `styleWeight`: Style adherence weight (0.00-1.00)
-- `weirdnessConstraint`: Creativity/novelty constraint (0.00-1.00)
-- `audioWeight`: Audio consistency weight (0.00-1.00)
-- `model`: Model version used for generation. Allowed values: `V4_5PLUS` (default), `V5`, `V5_5`
+* `vocalGender`: Preferred vocal gender ('m' for male, 'f' for female)
+* `styleWeight`: Style adherence weight (0.00-1.00)
+* `weirdnessConstraint`: Creativity/novelty constraint (0.00-1.00)
+* `audioWeight`: Audio consistency weight (0.00-1.00)
+* `model`: Model version used for generation. Allowed values: `V4_5PLUS` (default), `V5`, `V5_5`
 
 Audio requirements:
 
-- Input Type: Instrumental or backing track audio files
-- File Format: MP3, WAV, or other supported audio formats
-- Quality: Clear instrumental tracks work best for vocal addition
-- Accessibility: Ensure uploaded audio URLs are publicly accessible
+* Input Type: Instrumental or backing track audio files
+* File Format: MP3, WAV, or other supported audio formats
+* Quality: Clear instrumental tracks work best for vocal addition
+* Accessibility: Ensure uploaded audio URLs are publicly accessible
 
 ### Developer Notes
 
@@ -55,9 +54,10 @@ Audio requirements:
 5. Callback process has three stages: text (text generation), first (first track complete), complete (all tracks complete)
 6. You can use the Get Music Generation Details endpoint to actively check task status instead of waiting for callbacks
 
+
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/generate/add-vocals
+````yaml suno-api/suno-api.json POST /api/v1/generate/add-vocals
 openapi: 3.0.0
 info:
   title: intro
@@ -226,13 +226,13 @@ paths:
                   default: V4_5PLUS
                   example: V4_5PLUS
       responses:
-        "200":
+        '200':
           description: Request successful
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -242,11 +242,11 @@ paths:
                             type: string
                             description: Task ID for tracking task status
                             example: 5c79****be8e
-        "500":
-          $ref: "#/components/responses/Error"
+        '500':
+          $ref: '#/components/responses/Error'
       callbacks:
         vocalsAdded:
-          "{request.body#/callBackUrl}":
+          '{request.body#/callBackUrl}':
             post:
               description: >-
                 System will call this callback when vocal generation is
@@ -360,11 +360,11 @@ paths:
                                     type: number
                                     description: Audio duration (seconds)
               responses:
-                "200":
+                '200':
                   description: Callback received successfully
               method: post
               type: path
-            path: "{request.body#/callBackUrl}"
+            path: '{request.body#/callBackUrl}'
 components:
   schemas:
     ApiResponse:
@@ -442,4 +442,5 @@ components:
 
         > - If you suspect your API Key has been compromised, reset it
         immediately from the management page
+
 ````

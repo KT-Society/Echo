@@ -1,5 +1,4 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
@@ -7,29 +6,29 @@
 
 This is the key endpoint in the Suno API. Each request returns exactly 2 songs.
 
-- Stream URL: Available in 30-40 seconds.
-- Downloadable song URL: Ready in 2-3 minutes.
+* Stream URL: Available in 30-40 seconds.
+* Downloadable song URL: Ready in 2-3 minutes.
 
 Concurrency limit: 20 requests every 10 seconds. Exceeding this will result in request rejection. Please review the parameters carefully to ensure proper use.
 
 ### Parameter Usage Guide
 
-- When customMode is true (Custom Mode):
-  - If instrumental is true: style and title are required
-  - If instrumental is false: style, prompt, and title are required
-  - Prompt length limit:
-    - For V4 model: 3000 characters
-    - For V4_5, V4_5PLUS, V4_5ALL, V5 and V5_5 models: 5000 characters
-  - Style length limit:
-    - For V4 model: 200 characters
-    - For V4_5, V4_5PLUS, V4_5ALL, V5 and V5_5 models: 1000 characters
-  - Title length limit:
-    - For V4 and V4_5ALL model: 80 characters
-    - For V4_5, V4_5PLUS, V5 and V5_5 models: 100 characters
-- When customMode is false (Non-custom Mode):
-  - Only prompt is required regardless of instrumental setting
-  - prompt length limit: 500 characters
-  - Other parameters should be left empty
+* When customMode is true (Custom Mode):
+  * If instrumental is true: style and title are required
+  * If instrumental is false: style, prompt, and title are required
+  * Prompt length limit:
+    * For V4 model: 3000 characters
+    * For V4\_5, V4\_5PLUS, V4\_5ALL, V5 and V5\_5 models: 5000 characters
+  * Style length limit:
+    * For V4 model: 200 characters
+    * For V4\_5, V4\_5PLUS, V4\_5ALL, V5 and V5\_5 models: 1000 characters
+  * Title length limit:
+    * For V4 and V4\_5ALL model: 80 characters
+    * For V4\_5, V4\_5PLUS, V5 and V5\_5 models: 100 characters
+* When customMode is false (Non-custom Mode):
+  * Only prompt is required regardless of instrumental setting
+  * prompt length limit: 3000 characters
+  * Other parameters should be left empty
 
 ### Optional Parameters
 
@@ -47,9 +46,10 @@ Concurrency limit: 20 requests every 10 seconds. Exceeding this will result in r
 5. Callback process has three stages: text (text generation), first (first track complete), complete (all tracks complete)
 6. You can use the Get Music Generation Details endpoint to actively check task status instead of waiting for callbacks
 
+
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/generate
+````yaml suno-api/suno-api.json POST /api/v1/generate
 openapi: 3.0.0
 info:
   title: intro
@@ -108,7 +108,7 @@ paths:
                     - In Non-custom Mode (`customMode: false`): Always required.
                     The prompt serves as the core idea, and lyrics will be
                     automatically generated based on it (not strictly matching
-                    the input). Maximum 500 characters.  
+                    the input). Maximum 3000 characters.  
                       Example: "A short relaxing piano tune"
                   example: A calm and relaxing piano track with soft melodies
                 style:
@@ -217,6 +217,16 @@ paths:
                     - V5
                     - V5_5
                   example: V4_5ALL
+                duration:
+                  type: number
+                  description: >-
+                    Audio duration in seconds. Optional. Only supported when
+                    `model` is `V5_5` and `customMode` is `true`. Range: 10–360
+                    seconds. Must be an integer.
+                  minimum: 10
+                  maximum: 360
+                  multipleOf: 1
+                  example: 60
                 negativeTags:
                   type: string
                   description: >-
@@ -271,13 +281,13 @@ paths:
                     details endpoint to poll task status
                   example: https://api.example.com/callback
       responses:
-        "200":
+        '200':
           description: Request successful
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -287,11 +297,11 @@ paths:
                             type: string
                             description: Task ID for tracking task status
                             example: 5c79****be8e
-        "500":
-          $ref: "#/components/responses/Error"
+        '500':
+          $ref: '#/components/responses/Error'
       callbacks:
         audioGenerated:
-          "{request.body#/callBackUrl}":
+          '{request.body#/callBackUrl}':
             post:
               description: >-
                 System will call this callback when audio generation is
@@ -420,11 +430,11 @@ paths:
                                     type: number
                                     description: Audio duration (seconds)
               responses:
-                "200":
+                '200':
                   description: Callback received successfully
               method: post
               type: path
-            path: "{request.body#/callBackUrl}"
+            path: '{request.body#/callBackUrl}'
 components:
   schemas:
     ApiResponse:
@@ -502,4 +512,5 @@ components:
 
         > - If you suspect your API Key has been compromised, reset it
         immediately from the management page
+
 ````

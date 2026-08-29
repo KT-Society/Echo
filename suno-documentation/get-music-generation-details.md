@@ -1,5 +1,4 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
@@ -9,23 +8,24 @@
 
 ### Status Descriptions
 
-- PENDING: Task is waiting to be processed
-- TEXT_SUCCESS: Lyrics/text generation completed successfully
-- FIRST_SUCCESS: First track generation completed successfully
-- SUCCESS: All tracks generated successfully
-- CREATE_TASK_FAILED: Failed to create the generation task
-- GENERATE_AUDIO_FAILED: Failed to generate music tracks
-- CALLBACK_EXCEPTION: Error occurred during callback
-- SENSITIVE_WORD_ERROR: Content contains prohibited words
+* PENDING: Task is waiting to be processed
+* TEXT\_SUCCESS: Lyrics/text generation completed successfully
+* FIRST\_SUCCESS: First track generation completed successfully
+* SUCCESS: All tracks generated successfully
+* CREATE\_TASK\_FAILED: Failed to create the generation task
+* GENERATE\_AUDIO\_FAILED: Failed to generate music tracks
+* CALLBACK\_EXCEPTION: Error occurred during callback
+* SENSITIVE\_WORD\_ERROR: Content contains prohibited words
 
 ### Developer Notes
 
-- For instrumental tracks (instrumental=true), no lyrics data will be included in the response
-- Use this endpoint to check task status instead of waiting for callbacks
+* For instrumental tracks (instrumental=true), no lyrics data will be included in the response
+* Use this endpoint to check task status instead of waiting for callbacks
+
 
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json GET /api/v1/generate/record-info
+````yaml suno-api/suno-api.json GET /api/v1/generate/record-info
 openapi: 3.0.0
 info:
   title: intro
@@ -68,13 +68,13 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Request successful
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -183,7 +183,7 @@ paths:
                 msg: success
                 data:
                   taskId: 5c79****be8e
-                  parentMusicId: ""
+                  parentMusicId: ''
                   param: >-
                     {"prompt":"A calm piano
                     track","style":"Classical","title":"Peaceful
@@ -195,18 +195,18 @@ paths:
                         audioUrl: https://example.cn/****.mp3
                         streamAudioUrl: https://example.cn/****
                         imageUrl: https://example.cn/****.jpeg
-                        prompt: "[Verse] 夜晚城市 灯火辉煌"
+                        prompt: '[Verse] 夜晚城市 灯火辉煌'
                         modelName: chirp-v3-5
                         title: 钢铁侠
                         tags: electrifying, rock
-                        createTime: "2025-01-01 00:00:00"
+                        createTime: '2025-01-01 00:00:00'
                         duration: 198.44
                   status: SUCCESS
                   type: GENERATE
                   errorCode: null
                   errorMessage: null
-        "500":
-          $ref: "#/components/responses/Error"
+        '500':
+          $ref: '#/components/responses/Error'
 components:
   schemas:
     ApiResponse:
@@ -284,4 +284,5 @@ components:
 
         > - If you suspect your API Key has been compromised, reset it
         immediately from the management page
+
 ````

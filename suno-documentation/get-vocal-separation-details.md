@@ -57,7 +57,7 @@ When status is SUCCESS, the response includes the following download URLs:
 
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json GET /api/v1/vocal-removal/record-info
+````yaml suno-api/suno-api.json GET /api/v1/vocal-removal/record-info
 openapi: 3.0.0
 info:
   title: intro

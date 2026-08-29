@@ -1,5 +1,4 @@
 > ## Documentation Index
->
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
@@ -9,24 +8,28 @@
 
 ### Parameter Usage Guide
 
-- When defaultParamFlag is true (Custom Parameters):
-  - If instrumental is true: style, title, and uploadUrl are required
-  - If instrumental is false: style, prompt, title, and uploadUrl are required
-  - prompt length limit by model:
-    - **V4**: Maximum 3000 characters
-    - **V4_5, V4_5PLUS, V4_5ALL, V5 & V5_5**: Maximum 5000 characters
-  - style length limit by model:
-    - **V4**: Maximum 200 characters
-    - **V4_5, V4_5PLUS, V4_5ALL, V5 & V5_5**: Maximum 1000 characters
-  - title length limit by model:
-    - **V4 & V4_5ALL**: Maximum 80 characters
-    - **V4_5, V4_5PLUS, V5 & V5_5**: Maximum 100 characters
-  - continueAt: the time point in seconds from which to start extending (must be greater than 0 and less than the uploaded audio duration)
-  - uploadUrl: specifies the upload location for audio files; ensure uploaded audio does not exceed 8 minutes.
-    - **Important**: When using the **V4_5ALL** model, the uploaded audio file must not exceed **1 minute** in length.
-- When defaultParamFlag is false (Default Parameters):
-  - Regardless of instrumental setting, only uploadUrl and prompt are required
-  - Other parameters will use the original audio's parameters
+* instrumental determines whether the audio is instrumental (without lyrics) and defaults to false
+* prompt is optional in all cases; when provided, it is used as a generation prompt
+* When defaultParamFlag is true (Custom Parameters):
+  * If instrumental is true: only style, title, and uploadUrl are required; prompt and vocalGender are not required
+  * If instrumental is false: style, title, and uploadUrl are required; prompt is optional and used as a generation prompt when provided, and vocalGender is not required
+  * prompt length limit by model:
+    * **V4**: Maximum 3000 characters
+    * **V4\_5, V4\_5PLUS, V4\_5ALL, V5 & V5\_5**: Maximum 5000 characters
+  * style length limit by model:
+    * **V4**: Maximum 200 characters
+    * **V4\_5, V4\_5PLUS, V4\_5ALL, V5 & V5\_5**: Maximum 1000 characters
+  * title length limit by model:
+    * **V4 & V4\_5ALL**: Maximum 80 characters
+    * **V4\_5, V4\_5PLUS, V5 & V5\_5**: Maximum 100 characters
+  * continueAt: the time point in seconds from which to start extending (must be greater than 0 and less than the uploaded audio duration)
+  * uploadUrl: specifies the upload location for audio files; ensure uploaded audio does not exceed 8 minutes.
+    * **Important**: When using the **V4\_5ALL** model, the uploaded audio file must not exceed **1 minute** in length.
+* When defaultParamFlag is false (Default Parameters):
+  * Regardless of instrumental setting, only uploadUrl is required
+  * prompt is optional
+  * If instrumental is false, lyrics will be generated automatically
+  * Other parameters will use the original audio's parameters
 
 ### Optional Parameters
 
@@ -39,13 +42,14 @@
 
 1. Generated files will be retained for 14 days
 2. Model version must be consistent with the source music
-3. **V4_5ALL Model Upload Limit**: When using the V4_5ALL model, the uploaded audio file must not exceed **1 minute** in length.
+3. **V4\_5ALL Model Upload Limit**: When using the V4\_5ALL model, the uploaded audio file must not exceed **1 minute** in length.
 4. This feature is ideal for creating longer works by extending existing music
 5. uploadUrl parameter specifies the upload location for audio files; provide a valid URL.
 
+
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/generate/upload-extend
+````yaml suno-api/suno-api.json POST /api/v1/generate/upload-extend
 openapi: 3.0.0
 info:
   title: intro
@@ -100,51 +104,57 @@ paths:
                 defaultParamFlag:
                   type: boolean
                   description: >-
-                    Enable custom mode for advanced audio generation settings.  
+                    Enables custom mode for advanced audio generation
+                    settings.  
 
                     - Set to `true` to use custom parameter mode (requires
-                    `style`, `title`, and `uploadUrl`; if `instrumental` is
-                    `false`, `uploadUrl` and `prompt` are required). If
-                    `instrumental` is `false`, the prompt will be strictly used
-                    as lyrics.  
+                    `style`, `title`, and `uploadUrl`). `prompt` is optional in
+                    all cases and, when provided, is used as a prompt.  
 
-                    - Set to `false` to use non-custom mode (only `uploadUrl`
-                    required). Lyrics will be automatically generated based on
-                    the prompt.
+                    - Set to `false` to use non-custom mode (only `uploadUrl` is
+                    required). `prompt` remains optional. When `instrumental` is
+                    `false`, lyrics are generated automatically.
                   example: true
                 instrumental:
                   type: boolean
                   description: >-
-                    Determines whether the audio is instrumental (without
+                    Determines whether the audio should be instrumental (without
                     lyrics).  
 
                     - In custom parameter mode (`defaultParamFlag: true`):  
-                      - If `true`: only `style`, `title`, and `uploadUrl` are required.  
-                      - If `false`: `style`, `title`, `prompt` (`prompt` will be used as exact lyrics), and `uploadUrl` are required.  
+                      - If `true`: only `style`, `title`, and `uploadUrl` are required; `prompt` and `vocalGender` do not need to be provided.  
+                      - If `false`: `style`, `title`, and `uploadUrl` are required; `prompt` is optional and, when provided, is used as a prompt; `vocalGender` does not need to be provided.  
                     - In non-custom parameter mode (`defaultParamFlag: false`):
-                    does not affect required fields (only `uploadUrl` needed).
-                    If `false`, lyrics will be automatically generated.
-                  example: true
+                    required fields are unaffected (only `uploadUrl` is
+                    required), and `prompt` remains optional. If `false`, lyrics
+                    are generated automatically.  
+
+                    Optional. Defaults to `false`.
+                  default: false
+                  example: false
                 prompt:
                   type: string
                   description: >-
-                    Description of how the music should be extended. Required
-                    when defaultParamFlag is true. Character limits by model:  
+                    Describes how the music should be extended. Optional in all
+                    cases. When provided, it is used as a prompt. Character
+                    limits by model:  
                       - **V4**: Maximum 3000 characters  
                       - **V4_5, V4_5PLUS, V4_5ALL, V5 & V5_5**: Maximum 5000 characters
                   example: Extend the music with more relaxing notes
                 style:
                   type: string
                   description: >-
-                    Music style, e.g., Jazz, Classical, Electronic. Character
-                    limits by model:  
+                    Music style, e.g., Jazz, Classical, Electronic. Required
+                    when `defaultParamFlag` is `true`. Character limits by
+                    model:  
                       - **V4**: Maximum 200 characters  
                       - **V4_5, V4_5PLUS, V4_5ALL, V5 & V5_5**: Maximum 1000 characters
                   example: Classical
                 title:
                   type: string
-                  description: |-
-                    Music title. Character limits by model:  
+                  description: >-
+                    Music title. Required when `defaultParamFlag` is `true`.
+                    Character limits by model:  
                       - **V4 & V4_5ALL**: Maximum 80 characters  
                       - **V4_5, V4_5PLUS, V5 & V5_5**: Maximum 100 characters
                   example: Peaceful Piano Extended
@@ -216,7 +226,9 @@ paths:
                   example: Relaxing Piano
                 vocalGender:
                   type: string
-                  description: Preferred vocal gender for generated vocals. Optional.
+                  description: >-
+                    Preferred vocal gender. Optional; no value is required for
+                    this endpoint.
                   enum:
                     - m
                     - f
@@ -259,13 +271,13 @@ paths:
                     details endpoint to poll task status
                   example: https://api.example.com/callback
       responses:
-        "200":
+        '200':
           description: Request successful
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
+                  - $ref: '#/components/schemas/ApiResponse'
                   - type: object
                     properties:
                       data:
@@ -275,11 +287,11 @@ paths:
                             type: string
                             description: Task ID for tracking task status
                             example: 5c79****be8e
-        "500":
-          $ref: "#/components/responses/Error"
+        '500':
+          $ref: '#/components/responses/Error'
       callbacks:
         audioExtend:
-          "{$request.body#/callBackUrl}":
+          '{$request.body#/callBackUrl}':
             post:
               description: >-
                 System will call this callback when audio generation is
@@ -393,11 +405,11 @@ paths:
                                     type: number
                                     description: Audio duration (seconds)
               responses:
-                "200":
+                '200':
                   description: Callback received successfully
               method: post
               type: path
-            path: "{$request.body#/callBackUrl}"
+            path: '{$request.body#/callBackUrl}'
 components:
   schemas:
     ApiResponse:
@@ -475,4 +487,5 @@ components:
 
         > - If you suspect your API Key has been compromised, reset it
         immediately from the management page
+
 ````

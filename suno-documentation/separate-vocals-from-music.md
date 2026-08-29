@@ -2,16 +2,17 @@
 > Fetch the complete documentation index at: https://docs.sunoapi.org/llms.txt
 > Use this file to discover all available pages before exploring further.
 
-# Vocal & Instrument Stem Separation
+# Vocal & Instrument Stem Separation
 
-> Use Suno’s official get‑stem API to split tracks created on our platform into clean vocal, accompaniment, or per‑instrument stems with state‑of‑the‑art source‑separation AI.
+> Use Suno's official get‑stem API to split tracks created on our platform into clean vocal, accompaniment, or per‑instrument stems with state‑of‑the‑art source‑separation AI.
 
-### **Usage Guide**
+### Usage Guide
 
 * Separate a platform‑generated mix into vocal, instrumental, and individual instrument components.
-* Two processing modes are available:
-  * `separate_vocal` — 2‑stem split
-  * `split_stem`   — up to 12‑stem split
+* Three processing modes are available:
+  * `separate_vocal` — 2‑stem split (Vocals + Instrumental)
+  * `split_stem`   — up to 12‑stem split
+  * `split_stem_advanced` — advanced multi‑stem separation with specific instrument selection
 * Ideal for karaoke creation, remixes, sample extraction, or detailed post‑production.
 * Best results on professionally mixed AI tracks with clear vocal and instrumental layers.
 * **Billing notice:** Each call consumes credits; **re‑calling the same track is charged again** (no server‑side caching).
@@ -19,31 +20,36 @@
 
 ### Separation Mode Details
 
-| **Mode (<code>type</code>)** | **Stems Returned**                                                                                                                 | **Typical Use**                             | **Credit Cost** |
-| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------ | :-------------- |
-| `separate_vocal` *(default)* | **2 stems** – Vocals + Instrumental                                                                                                | Quick vocal removal, karaoke, basic remixes | **10 Credits**  |
-| `split_stem`                 | **Up to 12 stems** – Vocals, Backing Vocals, Drums, Bass, Guitar, Keyboard, Strings, Brass, Woodwinds, Percussion, Synth, FX/Other | Advanced mixing, remixing, sound design     | **50 Credits**  |
+| **Mode (<code>type</code>)** | **Stems Returned**                                                                                                                 | **Typical Use**                                             | **Credit Cost** |
+| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------- | :-------------- |
+| `separate_vocal` *(default)* | **2 stems** – Vocals + Instrumental                                                                                                | Quick vocal removal, karaoke, basic remixes                 | **10 Credits**  |
+| `split_stem`                 | **Up to 12 stems** – Vocals, Backing Vocals, Drums, Bass, Guitar, Keyboard, Strings, Brass, Woodwinds, Percussion, Synth, FX/Other | Advanced mixing, remixing, sound design                     | **50 Credits**  |
+| `split_stem_advanced`        | **Specified instrument stems** — extract specific instruments via `stemName`                                                       | Precise instrument extraction, professional post‑production | **20 Credits**  |
 
 ### Parameter Reference
 
-| **Name**  | **Type** | **Description**                                                 |
-| :-------- | :------- | :-------------------------------------------------------------- |
-| `taskId`  | string   | ID of the original music-generation task                        |
-| `audioId` | string   | Which audio variation to process when multiple versions exist   |
-| `type`    | string   | **Required.** Separation mode: `separate_vocal` or `split_stem` |
+| **Name**      | **Type** | **Required** | **Description**                                                                                                                                                                                                       |
+| :------------ | :------- | :----------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `taskId`      | string   | Conditional  | Unique identifier of the music generation task. Should be the taskId returned by the "Generate Music" or "Extend Music" endpoint. **Required when using existing audio.**                                             |
+| `audioUrl`    | string   | Conditional  | URL of the audio file uploaded by the user. Maximum file size: 20MB. **Required when using user-uploaded audio.** Cannot be used together with `audioId`.                                                             |
+| `audioId`     | string   | Conditional  | Unique identifier of the specific audio track to process. This ID is returned in the callback data after music generation completes. **Required when using existing audio.** Cannot be used together with `audioUrl`. |
+| `type`        | string   | Optional     | Separation type: `separate_vocal` (default), `split_stem`, or `split_stem_advanced`                                                                                                                                   |
+| `stemName`    | string   | Conditional  | Only used when `type` is `split_stem_advanced`, specifies the name of the specific track/instrument to separate. Supported instruments include: Lead Vocal, Drum Kit, Piano, Guitar, Bass, Synth, Percussion, etc.    |
+| `callBackUrl` | string   | Required     | URL for receiving vocal separation task completion updates                                                                                                                                                            |
 
 ### Developer Notes
 
 * All returned audio-file URLs remain accessible for **14 days**.
 * Separation quality depends on the complexity and mixing of the original track.
-* `separate_vocal` returns **2 stems** — vocals + instrumental.
-* `split_stem` returns **up to 12 independent stems** — vocals, backing vocals, drums, bass, guitar, keyboard, strings, brass, woodwinds, percussion, synth, FX/other.
+* `separate_vocal` returns **2 stems** — vocals + instrumental.
+* `split_stem` returns **up to 12 independent stems** — vocals, backing vocals, drums, bass, guitar, keyboard, strings, brass, woodwinds, percussion, synth, FX/other.
+* `split_stem_advanced` returns independent stems for specified instruments. Use the `stemName` parameter to specify the instrument name.
 * **Billing:** Every request is charged. Re‑submitting the same track triggers **a new credit deduction** (no server‑side caching).
 
 
 ## OpenAPI
 
-````yaml /suno-api/suno-api.json POST /api/v1/vocal-removal/generate
+````yaml suno-api/suno-api.json POST /api/v1/vocal-removal/generate
 openapi: 3.0.0
 info:
   title: intro
@@ -82,69 +88,184 @@ paths:
             schema:
               type: object
               required:
-                - taskId
-                - audioId
                 - callBackUrl
+              oneOf:
+                - title: Separate using existing audio
+                  required:
+                    - taskId
+                    - audioId
+                  properties:
+                    taskId:
+                      type: string
+                      description: >-
+                        Unique identifier of the music generation task. Should
+                        be the taskId returned by the "Generate Music" or
+                        "Extend Music" endpoint.
+                      example: 5c79****be8e
+                    audioId:
+                      type: string
+                      description: >-
+                        Unique identifier of the specific audio track to
+                        process. This ID is returned in the callback data after
+                        music generation completes. Required when using existing
+                        audio.
+                      example: e231****-****-****-****-****8cadc7dc
+                - title: Separate using user-uploaded audio
+                  required:
+                    - audioUrl
+                  properties:
+                    audioUrl:
+                      type: string
+                      format: uri
+                      description: >-
+                        URL of the audio file uploaded by the user. Maximum file
+                        size: 20MB. Cannot be used together with audioId.
+                      example: https://example.com/my-audio.mp3
               properties:
-                taskId:
-                  type: string
-                  description: >-
-                    The task ID of the music generation task.  
-
-                    - Required. This identifies the task containing the audio to
-                    be processed.  
-
-                    - Both `taskId` and `audioId` are needed for accurate track
-                    identification.
-                  example: 5c79****be8e
                 audioId:
                   type: string
                   description: >-
-                    The ID of the specific audio track to separate.  
-
-                    - Required. This identifies which specific track within the
-                    task to process.  
-
-                    - Both `taskId` and `audioId` are needed for accurate track
-                    identification.
+                    Unique identifier of the specific audio track to process.
+                    This ID is returned in the callback data after music
+                    generation completes. Required when using existing audio.
+                    Cannot be used together with audioUrl.
                   example: e231****-****-****-****-****8cadc7dc
                 type:
                   type: string
                   description: >-
-                    Separation type.  
+                    Separation type.
 
                     - `separate_vocal`: Separate vocals and accompaniment,
-                    generating vocal track and instrumental track (default)  
+                    generating vocal and instrumental tracks
 
                     - `split_stem`: Separate various instrument sounds,
-                    generating vocals, backing vocals, drums, bass, guitar,
-                    keyboard, strings, brass, woodwinds, percussion,
-                    synthesizer, effects and other tracks
+                    generating multiple instrument tracks
+
+                    - `split_stem_advanced`: Advanced multi-stem separation with
+                    specific instrument selection, generating more refined
+                    instrument tracks
                   enum:
                     - separate_vocal
                     - split_stem
+                    - split_stem_advanced
                   default: separate_vocal
                   example: separate_vocal
+                stemName:
+                  type: string
+                  description: >-
+                    Only used when type is split_stem_advanced. Specifies the
+                    name of the specific track/instrument to separate.
+                  enum:
+                    - Lead Vocal
+                    - Drum Kit
+                    - Kick
+                    - Snare
+                    - Risers
+                    - Bass
+                    - Backing Vocals
+                    - Piano
+                    - Electric Guitar
+                    - Percussion
+                    - String Section
+                    - Synth
+                    - Acoustic Guitar
+                    - Sound Effects
+                    - Synth Pad
+                    - Synth Bass
+                    - Guitar
+                    - Brass Section
+                    - Organ
+                    - Electronic Drum Kit
+                    - Lead Electric Guitar
+                    - Synth Keys
+                    - Rhythm Electric Guitar
+                    - Electric Piano
+                    - Upright Bass
+                    - Keyboards
+                    - Distorted Electric Guitar
+                    - Synth Strings
+                    - Synth Lead
+                    - Woodwinds
+                    - Rhythm Acoustic Guitar
+                    - Flute
+                    - Harp
+                    - Tambourine
+                    - Trumpet
+                    - Arpeggiator
+                    - Accordion
+                    - Fiddle
+                    - Pedal Steel Guitar
+                    - Synth Voice
+                    - Violin
+                    - Digital Piano
+                    - Synth Brass
+                    - Mandolin
+                    - Choir
+                    - Banjo
+                    - Bells
+                    - Clarinet
+                    - Tenor Saxophone
+                    - Trombone
+                    - Shaker
+                    - French Horn
+                    - Glockenspiel
+                    - Electric Bass
+                    - Cello
+                    - Timpani
+                    - Harmonica
+                    - Marimba
+                    - Vibraphone
+                    - Lap Steel Guitar
+                    - Saxophone
+                    - Orchestra
+                    - Horns
+                    - Cymbals
+                    - Hand Clap
+                    - Oboe
+                    - Celesta
+                    - Congas
+                    - Drone
+                    - Alto Saxophone
+                    - Double Bass
+                    - Ukulele
+                    - Harpsichord
+                    - Baritone Saxophone
+                    - Xylophone
+                    - Tuba
+                    - Bass Guitar
+                    - Whistle
+                    - Lead Guitar
+                    - Rhodes
+                    - '808'
+                    - Bongos
+                    - Bassoon
+                    - Cowbell
+                    - Viola
+                    - Sitar
+                    - Steel Drums
+                    - Piccolo
+                    - Theremin
+                    - Bagpipes
+                    - Hi-Hat
+                    - Music Box
+                    - Melodica
+                    - Tabla
+                    - Koto
+                    - Djembe
+                    - Taiko
+                    - Didgeridoo
                 callBackUrl:
                   type: string
                   format: uri
                   description: >-
-                    The URL to receive vocal separation results when processing
-                    is complete.  
-
-                    - Required.  
-
-                    - The callback will include multiple URLs: original audio,
-                    isolated vocals, instrumental track, and individual
-                    instrument tracks.
-
-                    - For detailed callback format and implementation guide, see
-                    [Vocal Separation
-                    Callbacks](https://docs.sunoapi.org/suno-api/separate-vocals-from-music-callbacks)
-
-                    - Alternatively, you can use the get vocal separation
-                    details endpoint to poll task status
+                    URL for receiving vocal separation task completion updates.
+                    Required for all vocal separation requests.
                   example: https://api.example.com/callback
+              x-apidog-orders:
+                - audioId
+                - type
+                - stemName
+                - callBackUrl
       responses:
         '200':
           description: Request successful
