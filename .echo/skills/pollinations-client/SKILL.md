@@ -1,6 +1,8 @@
-# Skill: pollinations-client
-
-# Pollinations API Client
+---
+name: pollinations-client
+description: >-
+  A skill that lets you generate images, videos, audio, 3D models, and more using the Pollinations API.
+---
 
 Der `pollinations-client.mjs` ist die zentrale Schnittstelle für alle generative KI-Aufgaben im Pollinations-Ökosystem.
 

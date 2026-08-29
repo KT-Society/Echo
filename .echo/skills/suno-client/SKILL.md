@@ -1,6 +1,8 @@
-# Skill: suno-client
-
-# Suno API Client
+---
+name: suno-client
+description: >-
+  A skill that lets you generate music, separate stems, create custom voices, and more using the Suno API..
+---
 
 Der `suno-client.mjs` (V2 Full Suite) ist die zentrale Schaltstelle für KI-generierte Musik, Stem-Separation und Custom Voice Creation.
 
