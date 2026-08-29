@@ -568,7 +568,7 @@ async function convertToWav({ taskId, audioId, callbackUrl }) {
 
 /**
  * 🔁 Generate Music Cover
- * POST /api/v1/generate/cover
+ * POST /api/v1/suno/cover/generate (mit Fallback auf /api/v1/generate/cover)
  */
 async function generateCover({ audioId, style, title, prompt, model, callbackUrl }) {
   if (!audioId) {
@@ -588,7 +588,10 @@ async function generateCover({ audioId, style, title, prompt, model, callbackUrl
   console.log(`🔁 Generiere Cover (Track ID: ${audioId})...`);
   console.log(`   Neuer Style: ${body.style}`);
 
-  const result = await apiRequest('POST', '/api/v1/generate/cover', body);
+  let result = await apiRequest('POST', '/api/v1/suno/cover/generate', body);
+  if (result.status === 404 || result.code === 404) {
+    result = await apiRequest('POST', '/api/v1/generate/cover', body);
+  }
   console.log('✅ Antwort:', JSON.stringify(result, null, 2));
   return result;
 }
@@ -944,10 +947,10 @@ async function getStatus(taskId, type = 'music') {
   else if (type === 'wav') endpoint = `/api/v1/wav/record-info?taskId=${taskId}`;
   else if (type === 'vocal') endpoint = `/api/v1/vocal-removal/record-info?taskId=${taskId}`;
   else if (type === 'video') endpoint = `/api/v1/mp4/record-info?taskId=${taskId}`;
-  else if (type === 'cover') endpoint = `/api/v1/generate/cover/record-info?taskId=${taskId}`;
+  else if (type === 'cover') endpoint = `/api/v1/suno/cover/record-info?taskId=${taskId}`;
   else if (type === 'midi') endpoint = `/api/v1/midi/record-info?taskId=${taskId}`;
   else if (type === 'voice') endpoint = `/api/v1/voice/record-info?taskId=${taskId}`;
-  else if (type === 'voice-validate') endpoint = `/api/v1/voice/validate-phrase/record-info?taskId=${taskId}`;
+  else if (type === 'voice-validate') endpoint = `/api/v1/voice/validate-info?taskId=${taskId}`;
 
   console.log(`📋 Abfrage Status (${type}) für Task ID: ${taskId}...`);
   const result = await apiRequest('GET', endpoint);
