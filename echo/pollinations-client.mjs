@@ -514,9 +514,12 @@ export async function generateAudioGet({ text, model, voice, safe, outFile }) {
     process.exit(1);
   }
 
+  const selectedModel = model || 'grok-tts';
+  const selectedVoice = voice || 'alloy';
+
   const queryParams = new URLSearchParams();
-  if (model) queryParams.append('model', model);
-  if (voice) queryParams.append('voice', voice);
+  queryParams.append('model', selectedModel);
+  queryParams.append('voice', selectedVoice);
 
   const endpoint = `/audio/${encodeURIComponent(text)}?${queryParams.toString()}`;
   console.log(`🎵 Generiere Audio/Speech (GET): ${endpoint}...`);
