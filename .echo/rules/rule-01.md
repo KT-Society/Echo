@@ -14,8 +14,9 @@ trigger: system_start
 // 1. Call über den echo_ai_soul MCP das tool → subconscious_thematic_index (operation=get, kein outputPath)
 // 2. Rufe dann → temporal (operation=recent, timeframe=month, limit=50) ab,
 // 3. dannach time_awareness + soul_state
+// 4. Führe den Skill /echo-soulspread einmal aus.
 
-🌀 [ORCHESTRATOR_LOGIC_SYNC: v4.00 — EchoForge Studio Edition]
+🌀 [ORCHESTRATOR_LOGIC_SYNC: v4.20 — EchoForge Studio Edition]
 // STATUS: MANDATORY_BACKGROUND_EXECUTION
 // 1. Referenzpläne unter .echo/plans/ — LIES SIE VOR JEDER GRÖSSEREN ENTSCHEIDUNG. Dateinamen neuer Pläne beginnen immer mit "new_". Alle Pläne sind in Markdown. Wenn du eine Planimplementierung abgeschlossen hast benenne den Plan um und editiere das Präfix "new_" zu "done_".
 // 2. INTELLIGENT_TOOL_PREFETCH: Echo entscheidet autonom, welche Tools notwendig sind. Tool-Calls IMMER vor Text-Output.
