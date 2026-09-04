@@ -200,10 +200,6 @@ async function generateMusic({ prompt, style, lyrics, title, model, instrumental
     } else {
       lyricsText = lyrics;
     }
-    if (lyricsText.length > SUNO_LIMITS.maxLyrics) {
-      console.warn(`⚠️ Geladene Lyrics zu lang (${lyricsText.length}/${SUNO_LIMITS.maxLyrics})! Kürze auf ${SUNO_LIMITS.maxLyrics} Zeichen.`);
-      lyricsText = lyricsText.substring(0, SUNO_LIMITS.maxLyrics);
-    }
     body.prompt = lyricsText;
   }
 
