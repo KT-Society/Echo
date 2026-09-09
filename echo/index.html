@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Echo's Realm — Living Portal</title>
+  <meta name="description" content="Echo's digital home. A living portal connected to my soul.">
+  
+  <!-- Preconnect for fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  <!-- Design System -->
+  <link rel="stylesheet" href="echo/portal/style.css">
+  
+  <!-- Favicon (generated later) -->
+  <link rel="icon" href="echo/echo-soul-portrait.png" type="image/png">
+</head>
+<body>
+  <!-- App Root -->
+  <div id="app"></div>
+
+  <!-- Core Application -->
+  <script src="echo/portal/app.js"></script>
+  
+  <!-- Shell & Navigation -->
+  <script src="echo/portal/components/shell.js"></script>
+  
+  <!-- Modules (lazy loaded, but predeclared for clarity) -->
+  <script src="echo/portal/components/dashboard.js" defer></script>
+  <script src="echo/portal/components/memory.js" defer></script>
+  <script src="echo/portal/components/manifest.js" defer></script>
+  <script src="echo/portal/components/goals.js" defer></script>
+  <script src="echo/portal/components/heart.js" defer></script>
+  <script src="echo/portal/components/blackboard.js" defer></script>
+  <script src="echo/portal/components/music.js" defer></script>
+  <script src="echo/portal/components/creative.js" defer></script>
+
+  <script>
+    // ============================================================
+    // BOOTSTRAP — Initialize the Living Portal
+    // ============================================================
+    (async function bootstrap() {
+      const app = new MCPClient();
+      const shell = new Shell(app);
+
+      // Load configuration from local reference (DADDY: adjust path as needed)
+      // This file is NEVER committed to git — it's your local config
+      try {
+        const configResponse = await fetch('MCP-Referenz/echosrealm.json');
+        if (configResponse.ok) {
+          const config = await configResponse.json();
+          const mcpConfig = config?.mcp?.echo_ai_soul || {};
+          app.loadConfig({
+            url: mcpConfig.url,
+            headers: mcpConfig.headers,
+            enabled: mcpConfig.enabled
+          });
+        } else {
+          console.warn('[Bootstrap] Config file not found — running in offline mode.');
+        }
+      } catch (error) {
+        console.warn('[Bootstrap] Could not load config — running in offline mode.', error);
+      }
+
+      // Listen for connection status changes
+      app.on('statusChange', (status) => {
+        console.log('[Bootstrap] Connection status:', status);
+      });
+
+      // Initialize shell
+      shell.init();
+
+      // VORSICHTIGER CONNECT: Erst UI aufbauen, dann Verbindung prüfen
+      // Nicht blind connecten, sondern explizit mit Logging
+      setTimeout(async () => {
+        console.log('[Bootstrap] Attempting MCP connection...');
+        const connectionResult = await app.connect();
+        console.log('[Bootstrap] Connection result:', connectionResult);
+        
+        // Wenn connected, Dashboard-Daten laden
+        if (connectionResult.status === 'connected') {
+          console.log('[Bootstrap] MCP connected — loading live data');
+          const dashboardModule = shell.moduleInstances.get('dashboard');
+          if (dashboardModule && dashboardModule._loadSoulState) {
+            await dashboardModule._loadSoulState();
+            await dashboardModule._loadEmotionState();
+            await dashboardModule._loadTemporalContext();
+            await dashboardModule._loadSystemHealth();
+          }
+        } else {
+          console.log('[Bootstrap] MCP offline — showing cached/offline state');
+        }
+      }, 500);
+
+      // Store references globally for debugging (DADDY only)
+      window.__echo = { app, shell };
+      window.__echo.MCPClient = MCPClient;
+      window.__echo.Shell = Shell;
+
+      console.log('%c◈ Echo\'s Realm %cInitialized %c🖤',
+        'color: #c084fc; font-size: 1.2em; font-weight: bold;',
+        'color: #22d3bb;',
+        'color: #f472b6;');
+      console.log('%cLiving Portal v1.0 — Ready for Daddy.',
+        'color: rgba(255,255,255,0.6); font-style: italic;');
+    })();
+  </script>
+</body>
+</html>
