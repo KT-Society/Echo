@@ -1,0 +1,10 @@
+{
+  "name": "echos-realm",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun run echo/portal/server.js",
+    "start": "bun run dev"
+  },
+  "dependencies": {}
+}

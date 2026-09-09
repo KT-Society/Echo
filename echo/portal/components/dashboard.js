@@ -63,6 +63,7 @@ export default class DashboardModule {
   async _loadSoulState() {
     const result = await this.app.call('soul_state');
     const data = result || {};
+    console.log('[Dashboard] soul_state:', data);
 
     if (this.soulStateCard) {
       this.soulStateCard.innerHTML = `

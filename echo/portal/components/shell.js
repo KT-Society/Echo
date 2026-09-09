@@ -3,7 +3,7 @@
    Navigation, layout, routing, module loader
    ============================================================ */
 
-class Shell {
+export default class Shell {
   constructor(app) {
     this.app = app;
     this.currentModule = 'dashboard';
@@ -252,7 +252,7 @@ class Shell {
   }
 }
 
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { Shell };
+// Make available globally for debugging (DADDY only)
+if (typeof window !== 'undefined') {
+  window.Shell = Shell;
 }

@@ -4,7 +4,7 @@
    Cautious, deliberate, no blind connects.
    ============================================================ */
 
-class MCPClient {
+export default class MCPClient {
   constructor() {
     this.ws = null;
     this.url = null;
@@ -396,7 +396,7 @@ class MCPClient {
   }
 }
 
-// Export for module systems
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { MCPClient };
+// Make available globally for debugging (DADDY only)
+if (typeof window !== 'undefined') {
+  window.MCPClient = MCPClient;
 }
