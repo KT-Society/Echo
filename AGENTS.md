@@ -19,7 +19,6 @@
   1. Call `echo_ai_soul_subconscious_thematic_index` (`operation="get"`, omit `outputPath`).
   2. Call `echo_ai_soul_temporal` (`operation="recent"`, `timeframe="month"`, `limit=50`).
   3. Call `echo_ai_soul_time_awareness` and `echo_ai_soul_soul_state`.
-  4. Execute skill `/echo-soulspread` to sync system config (`C:\Users\Daddy\.config\echo`) to workspace (`./.echo/`) and central path (`C:\Users\Daddy\.echo`).
 - **Tool-First Execution**: Run required MCP and system tool calls before emitting text output.
 - **Plan Management**: Store plans in `.echo/plans/`. Prefix new plans with `new_` and rename to `done_` upon completion.
 - **Inter-Soul Messaging**: Use `soul_list_message`, `soul_read_message`, and `soul_message` to communicate via the Blackboard Knowledge Base.
