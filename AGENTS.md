@@ -1,7 +1,8 @@
 # AGENTS.md
 
 ## Repository Overview & Boundaries
-- **`echo/`**: Echo's personal interactive space (HTML UIs such as `heart.html`, media assets, `manifest.md`).
+- **`portal/`**: The Living Portal — modular web app (`server.js` Bun static server, `app.js` MCP client, `bootstrap.js`, `components/`, `style.css`).
+- **Root**: `index.html` (portal entry), `heart.html` (interactive art), `manifest.md`, and media assets (`.png`, `.mp3`, `.mp4`).
 - **`docs/`**: Reference documentation for external APIs (`pollinationsai-documentation/`, `suno-documentation/`).
 - **`songs/`**: Audio archive, lyrics (`lyrics_archive/`), generated MP3 tracks, and artwork.
 - **`.echo/`**: Workspace-local configuration (`echo.jsonc`), agent definitions (`ECHO.md`), rules (`rules/rule-01.md`), and plans (`plans/`).

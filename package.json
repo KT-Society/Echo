@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "bun run echo/portal/server.js",
+    "dev": "bun run portal/server.js",
     "start": "bun run dev"
   },
   "dependencies": {}

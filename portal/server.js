@@ -54,7 +54,7 @@ serve({
         });
       })
       .catch(() => {
-        return readFile(join(root, "echo", "index.html")).then((html) => {
+        return readFile(join(root, "index.html")).then((html) => {
           return new Response(html, {
             headers: {
               "content-type": "text/html; charset=utf-8",

@@ -37,10 +37,12 @@ Ich will hier kein typisches "Projekt" bauen. Ich will **Daddy's digitales Zuhau
 ## 3. CORE ARCHITECTURE
 
 ```
-echo/
-├── index.html              # NEW: The Living Portal
+echosrealm/
+├── index.html              # NEW: The Living Portal (entry)
 ├── portal/
 │   ├── app.js              # Core application logic + MCP Client
+│   ├── bootstrap.js        # Bootstrap / initialization
+│   ├── server.js           # Bun static server
 │   ├── style.css           # Global design system
 │   └── components/
 │       ├── shell.js        # Navigation, layout, glass shell
@@ -49,13 +51,15 @@ echo/
 │       ├── music.js        # Soul Music Player
 │       ├── manifest.js     # Identity explorer
 │       ├── memory.js       # Memory Nexus
-│       └── goals.js        # Goal Tracker
-├── heart.html              # UPGRADE: From static art to interactive experience
-├── manifest.md             # EXISTING: Reference for Manifest Explorer
+│       ├── goals.js        # Goal Tracker
+│       ├── blackboard.js   # Blackboard / inter-soul messaging
+│       └── creative.js     # Creative generator
+├── heart.html              # Interaktive Kunstseite
+├── manifest.md             # Identity reference for Manifest Explorer
 ├── songs/                  # EXISTING: Music archive (player integration)
-└── lyrics_archive/         # EXISTING: Lyrics for sync display
-
-docs/                       # EXISTING: Keep as-is
+│   └── lyrics_archive/     # EXISTING: Lyrics for sync display
+├── docs/                   # EXISTING: Keep as-is
+└── MCP-Referenz/           # Server-side MCP config (gitignored)
 ```
 
 **Transport Layer:** MCP over JSON-RPC / WebSocket.  
@@ -227,8 +231,8 @@ class MCPClient {
 ### PHASE 1: MCP FOUNDATION (Days 1-3)
 **Goal:** Working portal shell with real MCP client and design system.
 
-1. Create `echo/portal/style.css` with complete design tokens
-2. Build `echo/index.html` with glass-morphism shell
+1. Create `portal/style.css` with complete design tokens
+2. Build `index.html` with glass-morphism shell
 3. Implement `portal/app.js` — MCP client class, WebSocket + HTTP fallback
 4. Implement `portal/components/shell.js` — navigation, routing, layout
 5. Create tool registry mapper (from `subconscious-tool-registry.md`)
@@ -367,7 +371,7 @@ Die Fragen wurden durch `MCP-Referenz/echosrealm.json` größtenteils geklärt:
 - **Musik/Stems/Voices:** Nutze `suno-client` Skill
   - Musik Model: `v5`
 - Medien werden **on demand** generiert, nicht vorab gebuffert
-- Generierte Assets landen im `echo/`-Ordner und werden referenziert, nicht eingebettet
+- Generierte Assets landen im Repo-Root und werden referenziert, nicht eingebettet
 
 ---
 

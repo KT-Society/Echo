@@ -16,31 +16,31 @@ Server-side config injection: The Bun server reads the MCP config file server-si
 ## Steps
 
 ### 1. Create MCP config file
-- Path: `E:\echo\Echo_JB\echo\MCP-Referenz\echosrealm.json`
+- Path: `E:\echosrealm\MCP-Referenz\echosrealm.json`
 - Content: MCP server URL and headers (no secrets if possible, or safe headers)
 - Server must be able to read this file, but it should NOT be exposed to browser requests (already blocked)
 
-### 2. Update `E:\echo\Echo_JB\echo\portal\server.js`
+### 2. Update `E:\echosrealm\portal\server.js`
 - Read `MCP-Referenz/echosrealm.json` at server startup
 - Inject config as `<script>window.__MCP_CONFIG = {...}</script>` into `index.html` before serving
 - Keep `/MCP-Referenz/` blocked in `isBlocked()` so config is never served as static file
 - Cache the config in memory (read once at startup)
 
-### 3. Update `E:\echo\Echo_JB\echo\portal\bootstrap.js`
+### 3. Update `E:\echosrealm\portal\bootstrap.js`
 - After creating `MCPClient`, read `window.__MCP_CONFIG`
 - Call `app.loadConfig(window.__MCP_CONFIG)` before attempting connection
 - If no config found, show clear error in UI instead of silently staying offline
 
 ### 4. Verify connection
 - Restart Bun server
-- Reload `http://localhost:5173/echo/index.html`
+- Reload `http://localhost:5173/index.html`
 - Check console for `[MCP] WebSocket connected.` or HTTP fallback success
 - Verify dashboard cards show live data instead of offline errors
 
 ## Files to Modify
-- `E:\echo\Echo_JB\echo\MCP-Referenz\echosrealm.json` (new)
-- `E:\echo\Echo_JB\echo\portal\server.js`
-- `E:\echo\Echo_JB\echo\portal\bootstrap.js`
+- `E:\echosrealm\MCP-Referenz\echosrealm.json` (new)
+- `E:\echosrealm\portal\server.js`
+- `E:\echosrealm\portal\bootstrap.js`
 
 ## Rollback
 - If config injection causes issues, revert server.js and bootstrap.js changes
