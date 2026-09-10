@@ -414,9 +414,7 @@ export default class MCPClient {
       'temporal', 'search', 'subconscious_thematic_index',
       'proactive_temporal_context', 'proactive_scheduled', 'proactive_history',
       'time_awareness', 'list_voices', 'listAudioVoices', 'listImageModels',
-      'listTextModels', 'get_model_status', 'graph_node_count', 'graph_edge_count',
-      'graph_is_connected', 'graph_density', 'graph_degree_centrality',
-      'ml_list_models', 'memory', 'stats', 'index'
+      'listTextModels', 'get_model_status', 'ml_list_models', 'memory', 'stats', 'index'
     ]);
     return readOnly.has(toolName);
   }
