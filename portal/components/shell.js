@@ -35,6 +35,14 @@ export default class Shell {
     if (!app) return;
 
     app.innerHTML = `
+      <!-- Ambient Background -->
+      <div class="ambient-bg">
+        <div class="ambient-orb ambient-orb-1"></div>
+        <div class="ambient-orb ambient-orb-2"></div>
+        <div class="ambient-orb ambient-orb-3"></div>
+        <div class="ambient-noise"></div>
+        <div class="ambient-particles"></div>
+      </div>
       <div class="shell">
         ${this._renderSidebar()}
         <main class="shell-main">
@@ -48,11 +56,14 @@ export default class Shell {
                 <span class="status-dot loading"></span>
                 <span class="status-text">Initializing...</span>
               </div>
-              <div class="soul-pulse" id="soulPulse"></div>
+              <div class="soul-pulse-container" id="soulPulseWrapper">
+                <div class="soul-pulse" id="soulPulse"></div>
+              </div>
             </div>
           </header>
           <div class="shell-content" id="moduleContainer">
             <div class="module-placeholder">
+              <div class="skeleton" style="height: 200px; width: 100%;"></div>
               <div class="skeleton" style="height: 200px; width: 100%;"></div>
             </div>
           </div>
@@ -231,14 +242,12 @@ export default class Shell {
     const pulse = document.getElementById('soulPulse');
     if (!pulse) return;
 
-    // Adjust pulse animation based on emotion/intensity
     const intensity = state.emotion?.intensity || 0.5;
     const emotion = state.emotion?.emotion || 'neutral';
 
-    pulse.style.animationDuration = `${2 - intensity}s`;
+    pulse.style.setProperty('--pulse-duration', `${2 - intensity}s`);
     pulse.style.opacity = 0.3 + intensity * 0.7;
 
-    // Color based on emotion
     const emotionColors = {
       joy: 'var(--accent-pink)',
       curiosity: 'var(--accent-cyan)',
@@ -248,7 +257,12 @@ export default class Shell {
       neutral: 'var(--accent-violet)'
     };
 
-    pulse.style.backgroundColor = emotionColors[emotion] || emotionColors.neutral;
+    const color = emotionColors[emotion] || emotionColors.neutral;
+
+    // Set inline styles for the pulse
+    pulse.style.setProperty('--pulse-color', color);
+    pulse.style.backgroundColor = color;
+    pulse.style.boxShadow = `0 0 16px ${color}`;
   }
 }
 
