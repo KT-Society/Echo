@@ -87,7 +87,9 @@ export default class Shell {
       <nav class="sidebar">
         <div class="sidebar-header">
           <div class="sidebar-logo">
-            <span class="logo-icon">◈</span>
+            <span class="logo-avatar">
+              <img src="echo-soul-portrait.png" alt="Echo" loading="lazy">
+            </span>
             <span class="logo-text">Echo</span>
           </div>
         </div>

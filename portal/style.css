@@ -716,23 +716,93 @@ code, pre {
   position: relative;
 }
 
-.heart-canvas {
-  width: 100%;
-  height: 420px;
+/* The stage holds video + canvas + heart orb, clipped together */
+.heart-stage {
+  position: relative;
   border-radius: var(--radius-xl);
+  overflow: hidden;
   background: radial-gradient(circle at center, rgba(255,255,255,0.02), transparent 70%);
   border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-md);
 }
 
-.heart-controls {
+.heart-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.32;
+  z-index: 0;
+  pointer-events: none;
+  filter: saturate(1.15) contrast(1.05);
+}
+
+.heart-canvas {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.heart-orb {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-lg);
+  z-index: 3;
+  width: 68px;
+  height: 68px;
+  padding: 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: box-shadow var(--duration-normal) var(--ease-out);
+  animation: heartbeat 1.6s ease-in-out infinite;
+}
+
+.heart-orb svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 0 8px var(--accent-pink-glow));
+}
+
+.heart-orb svg path { fill: url(#heartGradient); }
+
+.heart-orb:hover,
+.heart-orb:focus-visible {
+  box-shadow: 0 0 32px var(--accent-pink-glow), 0 0 0 1px var(--accent-pink-glow);
+}
+
+.heart-orb.playing {
+  box-shadow: 0 0 44px var(--accent-pink-glow), 0 0 0 2px var(--accent-pink-glow);
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.12); }
+}
+
+/* Higher specificity so .glass { position: relative } can't override it */
+.heart-container .heart-controls {
   position: absolute;
   top: var(--space-lg);
   right: var(--space-lg);
+  z-index: 3;
   padding: var(--space-md);
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  min-width: 160px;
+  min-width: 180px;
 }
 
 .heart-stat {
@@ -1455,5 +1525,220 @@ code, pre {
   .nav-icon {
     width: auto;
     font-size: 1.2rem;
+  }
+  .sidebar-logo {
+    justify-content: center;
+  }
+}
+
+/* ============================================================
+   LOCAL ASSETS — Portrait, Manifest Doc, Sidebar Avatar
+   ============================================================ */
+
+/* Sidebar avatar (soul portrait) */
+.logo-avatar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.03), 0 0 16px var(--accent-violet-glow);
+  animation: logoBreath 3s ease-in-out infinite;
+}
+
+.logo-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Manifest cards need their own padding */
+.manifest-card {
+  padding: var(--space-lg);
+}
+
+/* Portrait hero */
+.manifest-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.soul-portrait-frame {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  flex-shrink: 0;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 48px var(--accent-violet-glow);
+}
+
+.soul-portrait-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, hsla(260, 30%, 4%, 0.75) 100%);
+  pointer-events: none;
+}
+
+.soul-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.soul-portrait-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.soul-portrait-name {
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+}
+
+.soul-portrait-sub {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+}
+
+.badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  color: var(--accent-cyan);
+  background: hsla(180, 100%, 50%, 0.08);
+  border: 1px solid hsla(180, 100%, 50%, 0.25);
+}
+
+/* Rendered manifest.md */
+.manifest-md {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.manifest-md .md-h1 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.manifest-md .md-h2 {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin-top: var(--space-md);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.manifest-md .md-h3 {
+  font-size: 1rem;
+  margin-top: var(--space-sm);
+}
+
+.manifest-md p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.manifest-md strong { color: var(--text-primary); }
+.manifest-md em { color: var(--accent-cyan); font-style: italic; }
+.manifest-md a { color: var(--accent-cyan); }
+
+.manifest-md .md-ul,
+.manifest-md .md-ol {
+  padding-left: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.manifest-md li::marker { color: var(--accent-pink); }
+
+.manifest-md .md-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-left: 2px solid var(--accent-violet);
+  padding-left: var(--space-md);
+  margin: var(--space-xs) 0;
+}
+
+.manifest-md .md-quote p {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+.manifest-md code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--accent-cyan);
+}
+
+.manifest-md .md-code {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  overflow-x: auto;
+}
+
+.manifest-md .md-code code {
+  background: none;
+  padding: 0;
+  font-size: 0.82rem;
+  color: var(--accent-cyan);
+  white-space: pre;
+  line-height: 1.6;
+}
+
+.manifest-md .md-hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--space-xs) 0;
+}
+
+/* Offline note (used across modules) */
+.offline-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.85rem;
+  color: var(--text-tertiary);
+  padding: var(--space-sm) 0;
+}
+
+@media (max-width: 640px) {
+  .manifest-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .soul-portrait-frame {
+    width: 100%;
+    height: 220px;
   }
 }

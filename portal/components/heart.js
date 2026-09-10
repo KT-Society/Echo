@@ -1,6 +1,8 @@
 /* ============================================================
-   HEARTBEAT MODULE v1.0
-   Canvas particles, mouse interaction, live emotion
+   HEARTBEAT MODULE v1.1
+   Canvas particles + mouse interaction, live emotion,
+   Iris-Awakening video backdrop and click-to-hear audio.
+   Works offline — media is served from the workspace.
    ============================================================ */
 
 export default class HeartModule {
@@ -17,7 +19,24 @@ export default class HeartModule {
         <p class="module-subtitle">Connection, emotions & collaboration</p>
       </div>
       <div class="heart-container">
-        <canvas id="heartCanvas" class="heart-canvas"></canvas>
+        <div class="heart-stage">
+          <video class="heart-video" autoplay muted loop playsinline preload="metadata">
+            <source src="iris_awakening_video.mp4" type="video/mp4">
+          </video>
+          <canvas id="heartCanvas" class="heart-canvas"></canvas>
+          <button class="heart-orb" id="heartPlayBtn" type="button"
+                  aria-label="Play Echo's voice" title="Click the heart to hear me">
+            <svg viewBox="0 0 100 100" aria-hidden="true">
+              <defs>
+                <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ff6b9d" />
+                  <stop offset="100%" stop-color="#60a5fa" />
+                </linearGradient>
+              </defs>
+              <path d="M50 88.3C27.5 71.5 10 56.8 10 40.5 10 28.5 19.5 19 31.5 19c7.5 0 14.5 3.5 18.5 9 4-5.5 11-9 18.5-9C80.5 19 90 28.5 90 40.5c0 16.3-17.5 31-40 47.8z"/>
+            </svg>
+          </button>
+        </div>
         <div class="heart-controls glass">
           <div class="heart-stat">
             <span class="heart-label">Emotion</span>
@@ -29,6 +48,7 @@ export default class HeartModule {
           </div>
           <p class="heart-hint">Move your mouse over the canvas to interact.</p>
         </div>
+        <audio id="heartAudio" src="iris_awakening_audio.mp3" preload="none"></audio>
       </div>
     `;
     return el;
@@ -39,6 +59,8 @@ export default class HeartModule {
     this.ctx = this.canvas?.getContext('2d');
     this.emotionEl = document.getElementById('heartEmotion');
     this.intensityEl = document.getElementById('heartIntensity');
+
+    this._bindHeartButton();
 
     if (!this.canvas || !this.ctx) return;
 
@@ -54,10 +76,37 @@ export default class HeartModule {
     this._animate();
   }
 
+  /* ----------------------------------------------------------
+     IRIS AWAKENING — click the heart to hear Echo
+     ---------------------------------------------------------- */
+  _bindHeartButton() {
+    const button = document.getElementById('heartPlayBtn');
+    const audio = document.getElementById('heartAudio');
+    if (!button || !audio) return;
+
+    button.addEventListener('click', async () => {
+      try {
+        if (audio.paused) {
+          await audio.play();
+          button.classList.add('playing');
+        } else {
+          audio.pause();
+          audio.currentTime = 0;
+          button.classList.remove('playing');
+        }
+      } catch (error) {
+        console.warn('[Heart] Audio playback blocked:', error.message);
+      }
+    });
+
+    audio.addEventListener('ended', () => button.classList.remove('playing'));
+    audio.addEventListener('pause', () => button.classList.remove('playing'));
+  }
+
   _resizeCanvas() {
     const rect = this.canvas.parentElement.getBoundingClientRect();
-    this.canvas.width = rect.width;
-    this.canvas.height = Math.max(420, Math.min(520, window.innerHeight * 0.55));
+    this.canvas.width = Math.max(1, Math.floor(rect.width));
+    this.canvas.height = Math.floor(Math.max(420, Math.min(520, window.innerHeight * 0.55)));
   }
 
   _initParticles() {
@@ -94,6 +143,15 @@ export default class HeartModule {
   async _loadEmotion() {
     const result = await this.app.call('soul_emotion_state');
     const data = result || {};
+
+    if (data.error === 'offline') {
+      this.emotion = 'neutral';
+      this.intensity = 0.5;
+      if (this.emotionEl) this.emotionEl.textContent = 'offline';
+      if (this.intensityEl) this.intensityEl.textContent = '—';
+      return;
+    }
+
     this.emotion = data.emotion || 'neutral';
     this.intensity = typeof data.intensity === 'number' ? data.intensity : 0.5;
 
