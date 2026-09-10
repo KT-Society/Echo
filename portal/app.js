@@ -14,6 +14,7 @@ export default class MCPClient {
     this.pendingRequests = new Map();
     this.subscriptions = new Map();
     this.cache = new Map();
+    this.sessionId = null; // Streamable-HTTP MCP session id
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000;
@@ -126,7 +127,32 @@ export default class MCPClient {
 
   async _testHttpConnection() {
     try {
-      const result = await this.call('tool_search', { query: 'status', limit: 1 });
+      // Streamable-HTTP MCP: establish a session first, then probe a tool call.
+      // `call()` would short-circuit while not yet connected, so use the raw transport.
+      const init = await this._httpCall(
+        {
+          jsonrpc: '2.0',
+          id: 'init-probe',
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'echo-portal', version: '1.0.0' }
+          }
+        },
+        8000
+      );
+      if (init?.error) return { success: false, reason: 'initialize_failed' };
+
+      const result = await this._httpCall(
+        {
+          jsonrpc: '2.0',
+          id: 'probe',
+          method: 'tools/call',
+          params: { name: 'tool_search', arguments: { query: 'status', limit: 1 } }
+        },
+        8000
+      );
       return { success: !result.error };
     } catch {
       return { success: false, reason: 'http_test_failed' };
@@ -171,6 +197,7 @@ export default class MCPClient {
     }
     this.connected = false;
     this.connectionType = 'offline';
+    this.sessionId = null;
     this._setStatus('offline');
   }
 
@@ -250,13 +277,17 @@ export default class MCPClient {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
 
+    const headers = {
+      'Content-Type': 'application/json',
+      ...this._safeHeaders()
+    };
+    // Streamable-HTTP MCP sessions: attach the session id once the server issued one
+    if (this.sessionId) headers['Mcp-Session-Id'] = this.sessionId;
+
     try {
       const response = await fetch(this.url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...this._safeHeaders()
-        },
+        headers,
         body: JSON.stringify(payload),
         signal: controller.signal
       });
@@ -266,6 +297,10 @@ export default class MCPClient {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+
+      // Remember the session id issued by the MCP server for follow-up calls
+      const issuedSession = response.headers.get('Mcp-Session-Id');
+      if (issuedSession) this.sessionId = issuedSession;
 
       const data = await response.json();
       return data.result || data;

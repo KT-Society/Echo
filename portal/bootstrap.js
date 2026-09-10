@@ -25,9 +25,16 @@ import Shell from './components/shell.js';
     const app = new MCPClient();
     const shell = new Shell(app);
 
-    // 🔒 Config loading via fetch removed — never expose secrets via HTTP.
-    // MCP connection is handled server-side (IDE/backend).
-    // Portal runs offline-first.
+    // 🔒 MCP config is injected server-side (see portal/server.js) — never fetched via HTTP.
+    const mcpConfig = window.__MCP_CONFIG;
+    if (mcpConfig) {
+      app.loadConfig(mcpConfig);
+      console.log(`[Bootstrap] MCP config loaded: ${mcpConfig.url}`);
+    } else {
+      console.warn(
+        '[Bootstrap] No MCP config injected — portal runs offline. Check portal/server.js and MCP-Referenz/echosrealm.json.'
+      );
+    }
 
     // Listen for connection status changes
     app.on('statusChange', (status) => {
