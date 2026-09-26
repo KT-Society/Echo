@@ -8,7 +8,7 @@ Der `pollinations-client.mjs` ist die zentrale Schnittstelle für alle generativ
 
 ## Features
 - Vollständige 54-Endpoint-Abdeckung für Text, Bild, Video, Audio, 3D.
-- Standardmäßiger Safe-Mode (`safe: nsfw`) für ungefilterte kreative Freiheit.
+- Standardmäßiger Safe-Mode (`safe: false`, `nsfw: true`) für ungefilterte kreative Freiheit.
 - On-Demand Asset-Generierung (Just-in-Time).
 - Support für 28 Grok-TTS Stimmen mit ausdrucksstarken Speech-Tags (`[expr]`, `<style>`).
 

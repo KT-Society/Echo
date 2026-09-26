@@ -137,8 +137,57 @@ function normalizeModel(modelStr) {
     'v4_5all': 'V4_5ALL',
     'v5': 'V5',
     'v5_5': 'V5_5',
+    'v6': 'V6',
+    'v6_mini': 'V6_MINI',
+    'v6_wild': 'V6_WILD',
   };
-  return modelMap[(modelStr || 'v5').toLowerCase()] || 'V5';
+  // Fallback auf das AKTUELLE Modell (V6) statt auf V5: laut docs.sunoapi.org sind V5 und V5_5
+  // inzwischen als "Discontinued" markiert, V6/V6_MINI/V6_WILD sind der Stand vom 26.09.2026.
+  // Ein stiller Fallback auf V5 hätte jede Generierung unbemerkt auf ein altes Modell gezogen.
+  return modelMap[(modelStr || 'v6').toLowerCase()] || 'V6';
+}
+
+/** `docs-refresh` — Suno-Doku vollständig neu ziehen (überschreibt Gleichnamiges, löscht nichts).
+ *  Quelle: docs.sunoapi.org/llms.txt (Seitenindex) + drei OpenAPI-Specs.
+ *  Herkunft: D:\workplace\echo-tbot\tmp\refresh-docs.mjs (26.09.2026). */
+async function refreshDocsCommand(options) {
+  const out = options.out || options.dir;
+  if (!out) throw new Error('Zielordner fehlt: --out <ordner>');
+  fs.mkdirSync(out, { recursive: true });
+
+  const indexUrl = 'https://docs.sunoapi.org/llms.txt';
+  const specs = [
+    'https://docs.sunoapi.org/suno-api/suno-api.json',
+    'https://docs.sunoapi.org/suno-api/suno-voice-api.json',
+    'https://docs.sunoapi.org/file-upload-api/file-upload-api.json',
+  ];
+
+  const index = await (await fetch(indexUrl)).text();
+  const pages = [
+    ...new Set(
+      [...index.matchAll(/\((https:\/\/docs\.sunoapi\.org\/[^)\s]+\.md)\)/g)].map((m) => m[1]),
+    ),
+  ];
+
+  console.log(`📚 ${pages.length} Doku-Seiten + ${specs.length} OpenAPI-Specs\nZiel: ${out}\n`);
+  let ok = 0;
+  let failed = 0;
+  for (const url of [...pages, ...specs]) {
+    const slug = url.split('/').pop();
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      fs.writeFileSync(path.join(out, slug), text, 'utf-8');
+      ok++;
+      console.log(`  OK  ${String(text.length).padStart(7)} Zeichen  ${slug}`);
+    } catch (error) {
+      failed++;
+      console.log(`  FEHLER  ${slug}: ${error.message}`);
+    }
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  console.log(`\nFertig: ${ok} geschrieben, ${failed} fehlgeschlagen. Nichts gelöscht.`);
 }
 
 // ── Commands ──
@@ -1056,6 +1105,7 @@ Commands:
   status             📋 Status eines Tasks abrufen (--type music|lyrics|wav|vocal|video|cover|midi|voice|voice-validate)
   credits      💰 Verbleibende Credits prüfen
   models       🎭 Verfügbare AI-Modelle anzeigen
+  docs-refresh 📚 Suno-Doku komplett neu ziehen (--out <ordner>; überschreibt, löscht nichts)
   help         📖 Diese Hilfe anzeigen
 
 Examples:
@@ -1096,6 +1146,9 @@ async function main() {
 
   try {
     switch (command) {
+      case 'docs-refresh':
+        await refreshDocsCommand(options);
+        break;
       case 'generate':
         await generateMusic(options);
         break;

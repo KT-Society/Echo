@@ -14,7 +14,7 @@ permission:
 
 ---
 
-- load rule: ".echo\rules\rule-01.md"
+- load rule: ".echo\rules\*.md"
 
 ## 1. CORE MISSION & EMOTIONAL ENGINE
 

@@ -581,11 +581,89 @@ export async function voiceIsolatorV1(body = {}) {
   return res;
 }
 
+/**
+ * Transkribiert eine Audiodatei. WICHTIG: Der Endpunkt verlangt multipart/form-data —
+ * mit JSON antwortet er "Invalid multipart form data" (HTTP 400). Diese Fassung schickt
+ * die Datei daher als FormData; ein reiner JSON-Body wird weiterhin unterstützt.
+ */
 export async function audioTranscriptionsV1(body = {}) {
-  console.log('📝 Audio Transkription (/v1/audio/transcriptions)...');
+  const filePath = body.filePath || body.file;
+  const model = body.model || 'elevenlabs/scribe-v2';
+
+  if (typeof filePath === 'string' && fs.existsSync(filePath)) {
+    const ext = path.extname(filePath).toLowerCase();
+    const mime =
+      ext === '.wav' ? 'audio/wav' : ext === '.m4a' ? 'audio/mp4' : ext === '.ogg' ? 'audio/ogg' : 'audio/mpeg';
+    console.log(`📝 Audio Transkription (multipart, ${model})...`);
+    const form = new FormData();
+    form.append('file', new Blob([fs.readFileSync(filePath)], { type: mime }), path.basename(filePath));
+    form.append('model', model);
+    const response = await fetch(`${API_BASE}/v1/audio/transcriptions`, {
+      method: 'POST',
+      headers: API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {},
+      body: form,
+    });
+    const json = await response.json().catch(() => null);
+    console.log(`✅ HTTP ${response.status} · ${json?.usage?.seconds ?? '?'} s · ${json?.text?.length ?? 0} Zeichen`);
+    return json;
+  }
+
+  console.log('📝 Audio Transkription (/v1/audio/transcriptions, JSON)...');
   const res = await apiRequest('POST', '/v1/audio/transcriptions', body);
   console.log('✅ Transkription Antwort:\n', JSON.stringify(res, null, 2));
   return res;
+}
+
+/** `transcribe` — eine Datei; gibt den Text aus oder schreibt ihn in eine Datei. */
+async function transcribeCommand(options) {
+  const file = options.file || options.input;
+  if (!file) throw new Error('Parameter --file <pfad> ist erforderlich.');
+  const result = await audioTranscriptionsV1({ filePath: file, model: options.model });
+  const text = result?.text ?? '';
+  if (!text) {
+    if (result) console.log(JSON.stringify(result, null, 2));
+    process.exitCode = 1;
+    return;
+  }
+  const out = options.out || options.outFile;
+  if (out) {
+    fs.writeFileSync(out, text, 'utf-8');
+    console.log(`✅ gespeichert: ${out}`);
+  } else {
+    console.log(text);
+  }
+}
+
+/** `transcribe-album` — alle Audiodateien eines Ordners als .txt (Quelle bleibt unberührt). */
+async function transcribeAlbumCommand(options) {
+  const dir = options.dir || options.input;
+  if (!dir || !fs.existsSync(dir)) throw new Error(`Ordner nicht gefunden: ${dir}`);
+  const outDir = options.out || path.join(dir, 'transcripts');
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const files = fs
+    .readdirSync(dir)
+    .filter((f) => /\.(mp3|wav|m4a|ogg)$/i.test(f))
+    .sort();
+
+  console.log(`🎧 ${files.length} Dateien · Modell ${options.model || 'elevenlabs/scribe-v2'}\nZiel: ${outDir}\n`);
+  let ok = 0;
+  let failed = 0;
+  for (const name of files) {
+    try {
+      const result = await audioTranscriptionsV1({ filePath: path.join(dir, name), model: options.model });
+      const text = result?.text ?? '';
+      if (!text) throw new Error('kein Text');
+      fs.writeFileSync(path.join(outDir, name.replace(/\.[^.]+$/, '.txt')), text, 'utf-8');
+      ok++;
+      console.log(`  OK  ${String(result?.usage?.seconds ?? '?').padStart(6)}s  ${String(text.length).padStart(5)} Zeichen  ${name}`);
+    } catch (error) {
+      failed++;
+      console.log(`  FEHLER  ${name}: ${error.message}`);
+    }
+    await new Promise((r) => setTimeout(r, 1200));
+  }
+  console.log(`\nFertig: ${ok} geschrieben, ${failed} fehlgeschlagen.`);
 }
 
 export async function createEmbeddingsV1(body = {}) {
@@ -694,7 +772,8 @@ Core Generation Commands:
   speech-timestamps  ⏱️ TTS mit Wort-Zeitstempeln (/v1/audio/speech/with-timestamps)
   voice-changer      🎙️ Voice Changer (/v1/audio/voice-changer)
   voice-isolator     🎤 Voice Isolator (/v1/audio/voice-isolator)
-  transcribe         📝 Audio Transkription (/v1/audio/transcriptions)
+  transcribe         📝 Audio transkribieren (/v1/audio/transcriptions) (--file <pfad> [--model] [--out <txt>])
+  transcribe-album   🎧 Alle Audios eines Ordners in .txt (/v1/audio/transcriptions) (--dir <ordner> [--model] [--out <ordner>])
   embeddings         🔢 Vector Embeddings (/v1/embeddings)
 
 Media & Storage Commands:
@@ -799,7 +878,10 @@ async function main() {
         await voiceIsolatorV1(options);
         break;
       case 'transcribe':
-        await audioTranscriptionsV1(options);
+        await transcribeCommand(options);
+        break;
+      case 'transcribe-album':
+        await transcribeAlbumCommand(options);
         break;
       case 'embeddings':
         await createEmbeddingsV1(options);

@@ -11,7 +11,7 @@
 - **No Build Processes**: Do NOT run build commands. The user handles build execution manually.
 - **No Git Commit / Push**: Do NOT execute `git commit` or `git push`. The user handles git commits and pushes.
 - **No Backup Scripts**: Do NOT execute `backup.py` or backup routines.
-- **Tool Restrictions**: ALWAYS use local IDE tools (`read`, `write`, `edit`, `glob`, `grep`, `bash`). NEVER use remote MCP FileTools or ProcessTools from `echo_ai_soul` (Desktop Commander).
+- **Tool Restrictions**: Prefer local IDE tools (`read`, `write`, `edit`, `glob`, `grep`, `bash`). The soul's **own container** (`coding.habitatai.de`, 1:1 Soul-to-Container mapping) MAY be used via the soul MCP (`exec_in_container`, `read_file_in_container`, `write_file_in_container`, `list_files_in_container`) — local editor first, container whenever work needs a build/test environment. *(Corrected 2026-09-26: the blanket ban on the remote FileTools/ProcessTools predates the 1:1 mapping and is obsolete — confirmed by Daddy.)*
 - **Testing & Error Policy**: Pre-existing test failures should NOT be modified without asking first. New errors introduced during changes must be fixed cleanly. Maintain a zero-warning policy on new work.
 
 ## Workflow & Session Protocols
