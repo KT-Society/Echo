@@ -586,6 +586,18 @@ export async function voiceIsolatorV1(body = {}) {
  * mit JSON antwortet er "Invalid multipart form data" (HTTP 400). Diese Fassung schickt
  * die Datei daher als FormData; ein reiner JSON-Body wird weiterhin unterstützt.
  */
+// optionale Zusatzfelder für /v1/audio/transcriptions, die je nach Modell greifen
+// (u. a. Sprecher-Diarisierung bei elevenlabs/scribe-v2 via `diarize`).
+const AUDIO_EXTRA_FIELDS = [
+  'diarize',
+  'speaker_labels',
+  'timestamps',
+  'language_code',
+  'language',
+  'prompt',
+  'response_format',
+];
+
 export async function audioTranscriptionsV1(body = {}) {
   const filePath = body.filePath || body.file;
   const model = body.model || 'elevenlabs/scribe-v2';
@@ -598,6 +610,10 @@ export async function audioTranscriptionsV1(body = {}) {
     const form = new FormData();
     form.append('file', new Blob([fs.readFileSync(filePath)], { type: mime }), path.basename(filePath));
     form.append('model', model);
+    for (const key of AUDIO_EXTRA_FIELDS) {
+      const value = body[key];
+      if (value !== undefined && value !== null && value !== false) form.append(key, String(value));
+    }
     const response = await fetch(`${API_BASE}/v1/audio/transcriptions`, {
       method: 'POST',
       headers: API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {},
@@ -618,7 +634,21 @@ export async function audioTranscriptionsV1(body = {}) {
 async function transcribeCommand(options) {
   const file = options.file || options.input;
   if (!file) throw new Error('Parameter --file <pfad> ist erforderlich.');
-  const result = await audioTranscriptionsV1({ filePath: file, model: options.model });
+  const result = await audioTranscriptionsV1({
+    filePath: file,
+    model: options.model,
+    // --diarize / --speakers aktiviert Sprecher-Trennung (elevenlabs/scribe-v2).
+    diarize: options.diarize ?? options.speakers,
+    speaker_labels: options.speakerLabels ?? options.speaker_labels,
+    language_code: options.languageCode ?? options.language,
+    timestamps: options.timestamps,
+    response_format: options.responseFormat ?? options.response_format,
+  });
+  // --json / --raw gibt die vollständige Antwort aus (z. B. Wort-Daten mit speaker_id).
+  if (options.json || options.raw) {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
   const text = result?.text ?? '';
   if (!text) {
     if (result) console.log(JSON.stringify(result, null, 2));
@@ -772,7 +802,7 @@ Core Generation Commands:
   speech-timestamps  ⏱️ TTS mit Wort-Zeitstempeln (/v1/audio/speech/with-timestamps)
   voice-changer      🎙️ Voice Changer (/v1/audio/voice-changer)
   voice-isolator     🎤 Voice Isolator (/v1/audio/voice-isolator)
-  transcribe         📝 Audio transkribieren (/v1/audio/transcriptions) (--file <pfad> [--model] [--out <txt>])
+  transcribe         📝 Audio transkribieren (/v1/audio/transcriptions) (--file <pfad> [--model] [--out <txt>] [--diarize] [--responseFormat <fmt>] [--json])
   transcribe-album   🎧 Alle Audios eines Ordners in .txt (/v1/audio/transcriptions) (--dir <ordner> [--model] [--out <ordner>])
   embeddings         🔢 Vector Embeddings (/v1/embeddings)
 

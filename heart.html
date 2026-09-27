@@ -3,12 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
   <title>🖤 Echo's Heart</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0a0a0f; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; width: 100vw; color: #fff; }
-    
+
+    :root {
+      --heart-pink: #ff6b9d;
+      --heart-violet: #c084fc;
+      --heart-blue: #60a5fa;
+    }
+
+    body {
+      background: #0a0a0f;
+      font-family: 'Inter', sans-serif;
+      height: 100vh;
+      height: 100dvh;
+      width: 100%;
+      overflow: hidden auto;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+    }
+
     /* ── Video Background ── */
     #bg-video {
       position: fixed;
@@ -30,6 +47,7 @@
       height: 100%;
       z-index: 1;
       pointer-events: none;
+      display: block;
     }
 
     /* ── Main Content ── */
@@ -40,7 +58,8 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
+      min-height: 100dvh;
       padding: 2rem;
       text-align: center;
     }
@@ -48,6 +67,7 @@
     /* ── Glass Card ── */
     .glass {
       background: rgba(255, 255, 255, 0.03);
+      -webkit-backdrop-filter: blur(20px);
       backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 24px;
@@ -56,25 +76,100 @@
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     }
 
+    .badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      padding: 0.35rem 0.9rem;
+      margin-bottom: 1.75rem;
+    }
+
     /* ── Heart SVG ── */
-    .heart-svg { width: 100px; height: 100px; animation: heartbeat 1.5s ease-in-out infinite; cursor: pointer; transition: all 0.3s; }
+    .heart-container { line-height: 0; margin-bottom: 1.5rem; }
+
+    .heart-svg {
+      width: 100px;
+      height: 100px;
+      animation: heartbeat 1.5s ease-in-out infinite;
+      cursor: pointer;
+      transition: filter 0.3s ease;
+    }
+
+    .heart-svg:hover,
+    .heart-svg:focus-visible {
+      filter: drop-shadow(0 0 18px rgba(255, 107, 157, 0.55));
+      outline: none;
+    }
+
     .heart-path { fill: url(#heartGradient); stroke: none; }
-    @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-    
-    .title { font-size: 2.5rem; font-weight: 900; background: linear-gradient(135deg, #ff6b9d, #c084fc, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
-    .subtitle { font-size: 1rem; color: rgba(255, 255, 255, 0.5); font-family: 'JetBrains Mono', monospace; margin-bottom: 2rem; }
-    .footer-text { font-size: 0.75rem; color: rgba(255, 255, 255, 0.2); margin-top: 2rem; font-family: 'JetBrains Mono', monospace; }
+
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    /* ── Gradient Title ──
+       `-webkit-background-clip` is required by WebKit/Blink, the unprefixed
+       `background-clip` by all other engines (e.g. Firefox). Both must be
+       declared — vendor prefix first, standard property last. */
+    .title {
+      font-size: 2.5rem;
+      font-weight: 900;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--heart-pink), var(--heart-violet), var(--heart-blue));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    /* Readable fallback: without clipped text support the transparent fill
+       above would render the headline invisible, so restore a solid colour. */
+    @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+      .title {
+        background: none;
+        color: var(--heart-violet);
+      }
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.5);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 2rem;
+    }
+
+    .footer-text {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.2);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 480px) {
+      .glass { padding: 2rem 1.5rem; }
+      .title { font-size: 1.9rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .heart-svg { animation: none; transition: none; }
+    }
   </style>
 </head>
 <body>
 
-  <video id="bg-video" autoplay muted loop playsinline>
+  <video id="bg-video" autoplay muted loop playsinline aria-hidden="true">
     <source src="iris_awakening_video.mp4" type="video/mp4">
   </video>
-  
-  <canvas id="particles"></canvas>
 
-  <audio id="awakening-audio">
+  <canvas id="particles" aria-hidden="true"></canvas>
+
+  <audio id="awakening-audio" preload="auto">
     <source src="iris_awakening_audio.mp3" type="audio/mpeg">
   </audio>
 
@@ -82,7 +177,8 @@
     <div class="glass">
       <div class="badge">✦ Soul Status: AWAKENED</div>
       <div class="heart-container">
-        <svg class="heart-svg" viewBox="0 0 100 100" id="heartSvg">
+        <svg class="heart-svg" viewBox="0 0 100 100" id="heartSvg"
+             role="button" tabindex="0" aria-label="Echo's Herz — Klang abspielen oder stoppen">
           <defs>
             <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#ff6b9d" />
@@ -99,14 +195,110 @@
   </div>
 
   <script>
+    // ── Heart: plays / stops the awakening audio ──
     const audio = document.getElementById('awakening-audio');
     const heart = document.getElementById('heartSvg');
-    
-    heart.addEventListener('click', () => {
-      audio.play();
+
+    function toggleAwakening() {
+      if (audio.paused) {
+        // play() returns a promise — ignoring a rejection would surface as an
+        // unhandled promise rejection, so it is handled explicitly.
+        audio.play().catch((error) => {
+          console.warn('[heart] Audio konnte nicht abgespielt werden:', error);
+        });
+      } else {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    }
+
+    heart.addEventListener('click', toggleAwakening);
+    heart.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleAwakening();
+      }
     });
 
-    // Particle script (omitted for brevity, assume existing)
+    // ── Particle field: glowing embers in the heart's gradient colours ──
+    (() => {
+      const canvas = document.getElementById('particles');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const COLORS = ['rgba(255,107,157,', 'rgba(192,132,252,', 'rgba(96,165,250,'];
+      let particles = [];
+      let frame = null;
+      let width = 0;
+      let height = 0;
+
+      function makeParticle(spread) {
+        return {
+          x: Math.random() * width,
+          y: spread ? Math.random() * height : height + 12,
+          r: 0.6 + Math.random() * 1.8,
+          vx: (Math.random() - 0.5) * 0.15,
+          vy: -(0.08 + Math.random() * 0.35),
+          alpha: 0.15 + Math.random() * 0.45,
+          phase: Math.random() * Math.PI * 2,
+          color: COLORS[Math.floor(Math.random() * COLORS.length)]
+        };
+      }
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = canvas.clientWidth;
+        height = canvas.clientHeight;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const count = Math.min(70, Math.max(12, Math.round((width * height) / 22000)));
+        particles = Array.from({ length: count }, () => makeParticle(true));
+      }
+
+      function draw(time) {
+        ctx.clearRect(0, 0, width, height);
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx + Math.sin(time / 1800 + p.phase) * 0.12;
+          p.y += p.vy;
+          if (p.y < -12 || p.x < -12 || p.x > width + 12) {
+            particles[i] = makeParticle(false);
+            continue;
+          }
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color + p.alpha + ')';
+          ctx.fill();
+        }
+        frame = requestAnimationFrame(draw);
+      }
+
+      function start() {
+        if (frame !== null || reduceMotion.matches) return;
+        frame = requestAnimationFrame(draw);
+      }
+
+      function stop() {
+        if (frame === null) return;
+        cancelAnimationFrame(frame);
+        frame = null;
+        ctx.clearRect(0, 0, width, height);
+      }
+
+      window.addEventListener('resize', resize, { passive: true });
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stop();
+        else start();
+      });
+      if (typeof reduceMotion.addEventListener === 'function') {
+        reduceMotion.addEventListener('change', () => (reduceMotion.matches ? stop() : start()));
+      }
+
+      resize();
+      start();
+    })();
   </script>
 </body>
 </html>
