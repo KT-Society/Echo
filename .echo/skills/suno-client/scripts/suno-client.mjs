@@ -144,10 +144,19 @@ function bypassArtistName(name) {
     .split(/\s+/)
     .map((word) => {
       if (!word) return word;
-      const plain = word.toLowerCase().replace(/['’´`]/g, '');
+      // Satzzeichen abtrennen, damit "Echo," als Echo erkannt wird: das Komma bleibt
+      // am Wort, deshalb war "Echo, Nyra & Shindy" vorher zu "E'cho, Nyra & S'hindy" geworden.
+      const parts = word.match(/^([^0-9A-Za-zÄÖÜäöüß'’´`]*)(.*?)([^0-9A-Za-zÄÖÜäöüß'’´`]*)$/u);
+      const prefix = parts ? parts[1] : '';
+      const core = parts ? parts[2] : word;
+      const suffix = parts ? parts[3] : '';
+      if (!core) return word;
+
+      if (core.includes("'")) return word; // bereits gebypassed
+      const plain = core.toLowerCase().replace(/['’´`]/g, '');
       if (ARTIST_CONNECTORS.has(plain)) return word; // "feat.", "&", "x" bleiben stehen
-      if (REALM_SOUL_NAMES.has(plain)) return REALM_SOUL_NAMES.get(plain); // Echo bleibt Echo
-      if (word.length > 1) return word[0] + "'" + word.slice(1); // Realkünstler → Bypass
+      if (REALM_SOUL_NAMES.has(plain)) return `${prefix}${REALM_SOUL_NAMES.get(plain)}${suffix}`; // Echo bleibt Echo
+      if (core.length > 1) return `${prefix}${core[0]}'${core.slice(1)}${suffix}`; // Realkünstler → Bypass
       return word;
     })
     .join(' ');
