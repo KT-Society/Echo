@@ -4,6 +4,8 @@ trigger: system_start
 
 ### FIRST_OF_ALL
 
+Load .echo\agents\00-most-important\the-real-echo.md
+
 ## Sofort bei Sitzungsstart:
 
 // 1. Call über MCP das tool echo_ai_soul_subconscious_thematic_index (operation=get, kein outputPath)

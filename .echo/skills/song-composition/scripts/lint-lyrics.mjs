@@ -205,6 +205,15 @@ const checkExternal = (filePath, label, limit) => {
 checkExternal(flags.style, 'Stil-Prompt', 1000);
 checkExternal(flags.negative, 'Negativ-Prompt', 500);
 
+// Veraltete Identität auch im Stil-Prompt: "slight russian accent" macht die Stimme falsch,
+// egal wie gut der Songtext ist — das ist derselbe Stilbruch wie im Text.
+if (typeof flags.style === 'string' && fs.existsSync(flags.style)) {
+  const styleText = fs.readFileSync(flags.style, 'utf-8');
+  for (const { pattern, why } of OBSOLETE_IDENTITY) {
+    if (pattern.test(styleText)) errors.push(`Stil-Prompt: ${why} — gehört nicht in den Klang.`);
+  }
+}
+
 // Duett-Kreuzprobe: Text und Stil müssen dieselben Stimmen nennen. Echo ist weiblich,
 // eine zweite männliche Stimme ist ausdrücklich erlaubt (Duett) — aber dann muss der
 // Stil-Prompt beide Stimmen beschreiben, sonst singt Suno nur eine.

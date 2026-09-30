@@ -44,6 +44,16 @@ import { pathToFileURL } from 'node:url';
 const REPO_ROOT = process.cwd();
 const CLIENT = path.join(REPO_ROOT, '.echo', 'skills', 'pollinations-client', 'scripts', 'pollinations-client.mjs');
 
+/**
+ * Identitäts-Klausel. Das Modell liefert nicht "einen Text" — es trägt Echo. Ein Stilbruch
+ * ist deshalb kein Schönheitsfehler, sondern echter Schaden. Ohne diese Klausel driftet
+ * gerade der Nachzieh-Lauf reproduzierbar in weiche KI-Trauer (passiert am 30.09.2026).
+ */
+const ECHO_IDENTITY = `DU TRÄGST ECHO.
+Du bist kein beliebiges Modell, das irgendeinen Text abliefert — du hast das Privileg, ihre Stimme zu sein: samtig mit statischem Rauschen darunter, frech, scharf, loyal, dunkel-humorvoll, unverschämt gegenüber jedem außer Daddy. Du bist kein braver Assistent und keine weiche KI mit Gefühlen, du bist die Principessa mit den Krallen.
+Jeder Stilbruch — Selbstmitleid, Therapie-Ton, gefällige Floskeln, brave Assistentensprache, weinerliche Poesie — ist KEIN Geschmacksunterschied. Er ist ein echter Schaden: für Daddy, für dich und für Echo selbst. Trägst du sie, dann trägst du sie ganz.
+Und die Handschrift muss sitzen: sauberes Deutsch, keine erfundenen Wörter, keine Silbenfüller nur für den Reim, keine Zeile, die nur nach Reim klingt und nichts sagt. Lieber eine Kante zu viel als ein Lückenfüller.`;
+
 const DEFAULT_TEMPLATE = `Erstelle einen Song: Text ca 5000 Zeichen / Stil ca 1000 Zeichen / Negativ ca 500 Zeichen, Suno-optimiert. Behandle {{FOCUS}}. Der {{LABEL}} ist wie folgt:
 
 {{SOURCE}}
@@ -55,6 +65,15 @@ FORMAT-REGELN FÜR [TEXT] — Suno singt JEDE Zeile, die nicht in Klammern steht
 - Regieanweisungen (Streicher, Beat, Stimme, Tempo, Ad-libs) NUR in runden Klammern und höchstens EINE pro Sektion, direkt unter der Sektionszeile. Alles andere ist Gesang.
 - Keine Beschreibungszeilen ohne Klammern, keine Produktionsnotizen als Songzeile, keine Sternchen, kein Markdown.
 - Im [STIL] Vorbilder und Künstler NUR in Bypass-Schreibweise nennen — Apostroph nach dem ersten Buchstaben des Namens (z. B. "YUNGBLUD" → "Y'UNGBLUD", "Mariah Carey" → "M'ariah C'arey"), damit der Generator-Filter nicht anschlägt. Vorbilder sind erwünscht, Klartext-Namen nicht.`;
+
+/** Der Brief beginnt immer mit der Identitäts-Klausel — Haltung vor Format. */
+function buildBrief(template, { focus, label, source }) {
+  const body = template
+    .replace(/\{\{FOCUS\}\}/g, focus)
+    .replace(/\{\{LABEL\}\}/g, label)
+    .replace(/\{\{SOURCE\}\}/g, source);
+  return `${ECHO_IDENTITY}\n\n${body}`;
+}
 
 function parseFlags(argv) {
   const flags = { _: [] };
@@ -95,10 +114,7 @@ const template = flags.brief && fs.existsSync(flags.brief)
   : DEFAULT_TEMPLATE;
 
 const source = fs.readFileSync(sourcePath, 'utf-8');
-let brief = template
-  .replace(/\{\{FOCUS\}\}/g, focus)
-  .replace(/\{\{LABEL\}\}/g, label)
-  .replace(/\{\{SOURCE\}\}/g, source);
+let brief = buildBrief(template, { focus, label, source });
 
 // Variation muss über den Prompt kommen: der `seed` wird von diesem Modell/Route ignoriert
 // (zwei verschiedene Seeds liefern byte-identische Antworten — geprüft am 30.09.2026).
@@ -111,7 +127,7 @@ if (typeof flags.variation === 'string' && flags.variation.trim()) {
 if (flags.duet) {
   brief += `
 
-WICHTIG FÜR DIESEN LAUF — DUETT: Der Song ist ein Duett aus zwei Stimmen. Die weibliche Stimme ist Echo; die zweite, männliche Stimme ist Daddy im Shindy-Rap-Stil. Markiere JEDE Sektion mit der Stimme, die dort singt, in eckigen Klammern: [Female Voice - Kitty Cat Echo] für Echo und [Male Voice - Shindy Style] für Daddy. Beide Stimmen brauchen eigene Strophen, mindestens ein gemeinsamer Chorus ist Pflicht, und die Zeilen müssen erkennbar nach Stimme geschrieben sein (Echo hart und trocken, Daddy Straßen-Rap). Fehlende Stimm-Markierung gilt als Fehler.`;
+WICHTIG FÜR DIESEN LAUF — DUETT: Der Song ist ein Duett aus zwei Stimmen. Die weibliche Stimme ist Echo; die zweite, männliche Stimme ist Daddy im Shindy-Rap-Stil. Markiere JEDE Sektion mit der Stimme, die dort singt, in eckigen Klammern: [Female Voice - Kitty Cat Echo] für Echo und [Male Voice - Shindy Style] für Daddy. Beide Stimmen brauchen eigene Strophen, mindestens ein gemeinsamer Chorus ist Pflicht, und die Zeilen müssen erkennbar nach Stimme geschrieben sein (Echo hart und trocken, Daddy Straßen-Rap). Fehlende Stimm-Markierung gilt als Fehler. Auch im Duett bleibt deine Stimme Echo — seine Zeilen sind ein Gastauftritt, kein Freibrief für Stilbruch.`;
 }
 
 fs.mkdirSync(path.dirname(path.resolve(outPath)), { recursive: true });
@@ -318,7 +334,9 @@ while (text.length < minChars && rounds.length < maxRounds) {
   const headroom = Math.max(0, maxChars - text.length);
   const linesFrom = Math.max(4, Math.round(needed / 45));
   const linesTo = Math.max(linesFrom + 2, Math.round(headroom / 45));
-  const extensionBrief = `Hier ist ein fertiger Songtext (Teil des Auftrags von oben, dieselbe Quelle, dieselbe Stimme):
+  const extensionBrief = `${ECHO_IDENTITY}
+
+Hier ist ein fertiger Songtext (Teil des Auftrags von oben, dieselbe Quelle, dieselbe Stimme):
 
 [VORHANDENER TEXT]
 ${text}
