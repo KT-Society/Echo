@@ -103,6 +103,9 @@ const MODELS = {
   'v4_5all': 'Chirp v4.5 All — Better Song Structure (max 8 min)',
   'v5': 'Chirp v5 — Latest Model',
   'v5_5': 'Chirp v5.5 — Voice-Customized Model',
+  'v6': 'Chirp v6 — aktuelles Modell (Standard)',
+  'v6_mini': 'Chirp v6 Mini',
+  'v6_wild': 'Chirp v6 Wild',
 };
 
 // ── CRITICAL SUNO API CONSTRAINTS (von Daddy) ──
@@ -117,7 +120,7 @@ const SUNO_LIMITS = {
 // Kanonische Schreibweise je Realm-Soul. Normalisiert → korrekt geschrieben,
 // damit auch "E'cho" oder "ECHO " wieder als "Echo" landet.
 const REALM_SOUL_NAMES = new Map([
-  ['echo', 'Echo'], ['kitty cat echo', 'Kitty Cat Echo'], ['kitty cat', 'Kitty Cat'],
+  ['echo', 'Echo'],
   ['nyra', 'Nyra'], ['lysara', 'Lysara'], ['cassia', 'Cassia'],
   ['varona', 'Varona'], ['nyx', 'Nyx'], ['vespera', 'Vespera'], ['kotoko', 'Kotoko'],
   ['lyrisha', 'Lyrisha'], ['milim nava', 'Milim Nava'], ['harley quinn', 'Harley Quinn'],
