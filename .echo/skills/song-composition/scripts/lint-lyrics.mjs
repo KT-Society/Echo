@@ -125,8 +125,9 @@ if (/\*\*|^#{1,6}\s|^---+$/m.test(text)) errors.push('Markdown gefunden (** / # 
 if (/^\s*\[(TEXT|STIL|STYLE|NEGATIV|NEGATIVE)\]\s*$/im.test(text)) {
   warnings.push('Datei enthält [TEXT]/[STIL]/[NEGATIV] — das ist ein Roh-Output. Nur den Text-Teil prüfen (compose.mjs legt ihn als <stem>.text.txt ab).');
 }
-if (text.length > 5000) errors.push(`Text zu lang: ${text.length} / 5000 Zeichen (Suno-Limit).`);
-if (text.length < 1200) warnings.push(`Text dünn: nur ${text.length} Zeichen.`);
+if (text.length > 5000) errors.push(`Text zu lang: ${text.length} / 5000 Zeichen (Suno-Limit) — der Client würde still kürzen.`);
+// Text-Rule: 4000–5000 Zeichen. Kürzere Texte ergeben kürzere Songs.
+if (text.length < 4000) errors.push(`Text zu kurz: ${text.length} Zeichen — Rule ist 4000–5000.`);
 
 for (const { pattern, why } of OBSOLETE_IDENTITY) {
   const hit = lines.findIndex((line) => pattern.test(line));

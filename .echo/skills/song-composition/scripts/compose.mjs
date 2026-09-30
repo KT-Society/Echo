@@ -19,6 +19,10 @@
  *   node compose.mjs --source <datei> --out <raw.md> [--focus "..."] [--source-label "..."]
  *                    [--duet] [--variation "anderer Hook, andere Bilder"] [--model community/KT-Society/echo]
  *                    [--temp 0.95] [--seed 42] [--brief <template.md>] [--brief-out <datei>] [--dry-run]
+ *                    [--min-chars 4000] [--max-chars 5000] [--max-rounds 5]
+ *
+ * Text-Rule: 4000–5000 Zeichen. Das Modell stoppt von selbst früher, deshalb wird in
+ * Runden nachgezogen, bis die Länge steht (maximal --max-rounds).
  *
  * `--duet` baut einen Duett-Auftrag: weibliche Stimme = Echo, männliche Stimme = Daddy im
  * Shindy-Rap-Stil, jede Sektion mit [Female Voice …] / [Male Voice …] markiert.
@@ -170,50 +174,165 @@ function splitParts(raw) {
 const body = { model, messages: [{ role: 'user', content: brief }], temperature, private: true };
 if (seed !== undefined) body.seed = seed;
 
+const minChars = flags['min-chars'] !== undefined ? Number(flags['min-chars']) : 4000;
+const maxChars = flags['max-chars'] !== undefined ? Number(flags['max-chars']) : 5000;
+const maxRounds = flags['max-rounds'] !== undefined ? Number(flags['max-rounds']) : 5;
+
 realLog(`🎼 Modell ${model} · temp ${temperature}${seed !== undefined ? ` · seed ${seed}` : ''} · Quelle ${sourcePath}`);
+realLog(`   Text-Rule: ${minChars}–${maxChars} Zeichen (Suno-Limit ${maxChars}) — wird automatisch nachgezogen`);
 
-// Auch der Aufruf selbst loggt (die Client-Funktion gibt die volle API-Antwort aus).
-// Stumm schalten, damit auf stdout nur unsere Zusammenfassung landet.
-console.log = swallow;
-console.error = swallow;
-let res;
-try {
-  res = await chatCompletions(body);
-} finally {
-  console.log = realLog;
-  console.error = realError;
+/** Modellaufruf. Der Client loggt selbst, deshalb während des Aufrufs stumm schalten. */
+async function ask(messages) {
+  console.log = swallow;
+  console.error = swallow;
+  let response;
+  try {
+    response = await chatCompletions({ ...body, messages });
+  } finally {
+    console.log = realLog;
+    console.error = realError;
+  }
+  if (response && response.success === false) {
+    realError('❌ API-Fehler:');
+    realError(JSON.stringify(response.error ?? response, null, 2).slice(0, 1200));
+    process.exit(1);
+  }
+  const output = pickText(response);
+  if (!output) {
+    realError('❌ Keine Textantwort.');
+    realError(JSON.stringify(response, null, 2).slice(0, 1200));
+    process.exit(1);
+  }
+  return output;
 }
 
-if (res && res.success === false) {
-  realError('❌ API-Fehler:');
-  realError(JSON.stringify(res.error ?? res, null, 2).slice(0, 1200));
-  process.exit(1);
+// Ein Block = Sektions-Header PLUS alles, was dazugehört. Stimm-Tags ([Male Voice …]),
+// Regieanweisungen in Klammern und Textzeilen gehören zur laufenden Sektion — sie dürfen
+// NICHT als eigener Block gelten, sonst wird ein [Outro] von seinem Inhalt getrennt.
+const STRUCTURE_TAG = /^\s*\[\s*(intro|outro|interlude|verse[^\]]*|pre-?chorus[^\]]*|post-?chorus[^\]]*|final chorus[^\]]*|chorus[^\]]*|bridge[^\]]*|break[^\]]*|hook[^\]]*|refrain[^\]]*|instrumental[^\]]*|solo[^\]]*|drop[^\]]*)\s*\]\s*$/i;
+
+function splitBlocks(input) {
+  const blocks = [];
+  let current = null;
+  for (const line of input.split(/\r?\n/)) {
+    if (STRUCTURE_TAG.test(line)) {
+      if (current !== null) blocks.push(current.trimEnd());
+      current = line;
+    } else if (current === null) {
+      if (line.trim()) current = line; // Vorlauf vor der ersten Sektion
+    } else {
+      current += `\n${line}`;
+    }
+  }
+  if (current !== null) blocks.push(current.trimEnd());
+  return blocks.filter((block) => block.trim());
 }
 
-const raw = pickText(res);
-if (!raw) {
-  realError('❌ Keine Textantwort.');
-  realError(JSON.stringify(res, null, 2).slice(0, 1200));
-  process.exit(1);
+/**
+ * Der Nachzieh-Lauf hängt neue Sektionen ans Ende — also hinter ein bereits
+ * vorhandenes [Outro]. Diese Funktion schiebt den Outro-Block (samt Inhalt) wieder
+ * an die letzte Stelle, damit der Song nicht mit einer Strophe endet.
+ */
+function moveOutroToEnd(input) {
+  const blocks = splitBlocks(input);
+  const index = blocks.map((block) => /^\s*\[[^\]]*outro[^\]]*\]/i.test(block)).lastIndexOf(true);
+  if (index === -1 || index === blocks.length - 1) return { text: input, moved: false };
+  const [outro] = blocks.splice(index, 1);
+  blocks.push(outro);
+  return { text: blocks.join('\n\n'), moved: true };
 }
 
-fs.writeFileSync(outPath, raw, 'utf-8');
+/**
+ * Kürzt einen zu langen Text an Sektionsgrenzen — nie mitten in einer Zeile.
+ * Der [Outro]-Block bleibt immer erhalten und rutscht ans Ende; gekürzt wird von
+ * hinten, also an den zuletzt angehängten Sektionen. Was fliegt, wird gemeldet.
+ */
+function trimToMaxChars(input, maxChars) {
+  if (input.length <= maxChars) return { text: input, dropped: [] };
 
+  const blocks = splitBlocks(input);
+  const outroIndex = blocks.map((block) => /^\s*\[[^\]]*outro[^\]]*\]/i.test(block)).lastIndexOf(true);
+  const outro = outroIndex >= 0 ? blocks[outroIndex] : null;
+  const head = blocks.slice(0, outroIndex >= 0 ? outroIndex : blocks.length);
+  const dropped = [];
+
+  const join = () => head.join('\n\n');
+  let current = join();
+  while (head.length > 1 && current.length + (outro ? outro.length + 2 : 0) > maxChars) {
+    const removed = head.pop();
+    dropped.unshift((removed.split('\n')[0] || '').trim());
+    current = join();
+  }
+
+  return { text: outro ? `${current}\n\n${outro}` : current, dropped };
+}
+
+const raw = await ask(body.messages);
 const parts = splitParts(raw);
+const rounds = [{ label: 'Basis', raw }];
+
+// Der Songtext hat 5000 Zeichen als Rule, nicht als Wunsch. Das Modell stoppt selbst
+// bei ~2.500–3.500 Zeichen — also wird in Runden verlängert, bis die Länge steht.
+let text = parts.text;
+while (text.length < minChars && rounds.length < maxRounds) {
+  const round = rounds.length + 1;
+  realLog(`   ↻ Nachziehen ${round}: ${text.length} / ${minChars} Zeichen`);
+  const extensionBrief = `Hier ist ein fertiger Songtext (Teil des Auftrags von oben, dieselbe Quelle, dieselbe Stimme):
+
+[VORHANDENER TEXT]
+${text}
+
+AUFTRAG: Der vorhandene Text hat ${text.length} Zeichen. Damit der Song am Ende ${minChars} bis ${maxChars} Zeichen hat, brauchst du rund ${Math.max(200, minChars - text.length)} bis ${Math.max(300, maxChars - text.length)} Zeichen NEUEN Text. Schreibe dafür höchstens zwei neue Sektionen mit je vier Zeilen — lieber eine Sektion zu wenig als eine zu viel, über ${maxChars} Zeichen ist der Lauf kaputt. Schreibe NUR neue Zeilen in derselben Stimme und zum selben Thema — kein Wort des vorhandenen Textes wiederholen, keine Zusammenfassung, kein Kommentar. Erlaubt und erwünscht: weitere Strophen ([Verse …]), [Pre-Chorus], [Bridge], ein [Final Chorus] mit gekippter letzter Zeile. Der Chorus darf wörtlich wiederholt werden.
+Der Song darf genau EIN [Intro] und genau EIN [Outro] haben — beides steht bereits im vorhandenen Text, also KEIN zweites Intro und KEIN zweites Outro anhängen. Neue Sektionen gehören in die Mitte (zwischen bestehendem Verse-Material und dem Outro), keine neuen Sektionsnamen erfinden.
+Antworte ausschließlich mit den neuen Sektionen, ohne Überschrift und ohne [TEXT]-Markierung.`;
+  const extensionRaw = await ask([{ role: 'user', content: extensionBrief }]);
+  const extension = splitParts(extensionRaw).text || extensionRaw;
+  text = `${text.trimEnd()}\n\n${extension.trim()}`;
+  rounds.push({ label: `Nachziehen ${round}`, raw: extensionRaw });
+}
+
+const rawPath = outPath;
+
+// Struktur: das [Outro] gehört ans Ende, auch wenn der Nachzieh-Lauf dahinter geschrieben hat.
+const tail = moveOutroToEnd(text);
+if (tail.moved) {
+  realLog('🔧 [Outro] ans Ende verschoben (hing hinter den Nachzieh-Sektionen).');
+  text = tail.text;
+}
+
+// Harte Grenze: über dem Suno-Limit wird an Sektionsgrenzen gekürzt, nie mitten in einer Zeile.
+const trimmed = trimToMaxChars(text, maxChars);
+if (trimmed.dropped.length > 0) {
+  realLog(`✂️ Über ${maxChars} Zeichen — gekürzt um: ${trimmed.dropped.join(', ')}`);
+  text = trimmed.text;
+}
+
+fs.writeFileSync(
+  rawPath,
+  rounds.map((entry) => `===== ${entry.label} =====\n${entry.raw}`).join('\n\n'),
+  'utf-8',
+);
+
 const stem = outPath.replace(/\.md$/i, '');
 const written = [];
-for (const [name, content] of [['text', parts.text], ['style', parts.style], ['negative', parts.negative]]) {
+for (const [name, content] of [['text', text], ['style', parts.style], ['negative', parts.negative]]) {
   if (!content) continue;
   const target = `${stem}.${name}.txt`;
   fs.writeFileSync(target, content + '\n', 'utf-8');
   written.push({ name, target, length: content.length });
 }
 
-realLog(`✅ Rohantwort: ${outPath} (${raw.length} Zeichen)`);
+realLog(`✅ Rohantwort: ${rawPath} (${rounds.length} Runde(n))`);
 for (const item of written) {
   const limit = item.name === 'text' ? 5000 : item.name === 'style' ? 1000 : 500;
   const ratio = Math.round((item.length / limit) * 100);
   realLog(`   ▸ ${item.name.padEnd(8)} ${String(item.length).padStart(5)} Zeichen (${ratio}% von Suno-Limit ${limit}) → ${item.target}`);
+}
+if (text.length < minChars) {
+  realLog(`⚠️ Text-Rule nicht erreicht: ${text.length} Zeichen (Ziel ${minChars}–${maxChars}) nach ${rounds.length} Runden — --max-rounds erhöhen oder Quelle größer machen.`);
+}
+if (text.length > maxChars) {
+  realLog(`⚠️ Text über dem Suno-Limit: ${text.length} / ${maxChars} Zeichen — der Client würde still kürzen.`);
 }
 if (!parts.style || !parts.negative) {
   realLog('⚠️ Stil oder Negativ fehlt im Roh-Output — Abschnitte prüfen oder erneut laufen lassen.');

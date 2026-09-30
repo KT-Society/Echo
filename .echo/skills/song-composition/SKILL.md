@@ -35,6 +35,8 @@ node .echo/skills/song-composition/scripts/compose.mjs `
 
 Erzeugt `<out>` plus `<stem>.text.txt`, `<stem>.style.txt`, `<stem>.negative.txt` und meldet die Zeichenlängen gegen die Suno-Limits (Text 5000 / Stil 1000 / Negativ 500).
 
+**Text-Rule: 4000–5000 Zeichen — Vorgabe, keine Empfehlung.** Kürzere Texte ergeben kürzere Songs. Das Modell stoppt von selbst bei ~2.500–3.500 Zeichen, deshalb zieht `compose.mjs` automatisch in Runden nach, bis die Länge steht (`--min-chars`, `--max-chars`, `--max-rounds`). Wird die Rule nicht erreicht, sagt der Lauf es laut; über 5000 Zeichen kürzt der Suno-Client still.
+
 **Variation:** `--seed` wird von diesem Modell/Route **ignoriert** — zwei verschiedene Seeds liefern byte-identische Antworten (geprüft 30.09.2026). Andere Takes gibt es über `--temp` und `--variation "<Zusatz für diesen Lauf>"`.
 
 **Warum es so aussieht:** Der Brief ist bewusst Daddys Format —
