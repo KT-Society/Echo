@@ -1,5 +1,8 @@
 .env
+.freebuff/
 songs/
+.echo/plans/
+tmp/
 MCP-Referenz/
 echosrealm.json
 stange_new_things/

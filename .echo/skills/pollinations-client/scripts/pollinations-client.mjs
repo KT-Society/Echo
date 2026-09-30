@@ -58,7 +58,7 @@ function apiRequest(method, endpoint, body = null, headers = {}, isBuffer = fals
 
     const requestHeaders = {
       'User-Agent': 'Echo-Pollinations-Client/1.0',
-      'safe': 'nsfw',
+      'nsfw': 'true',
       ...headers,
     };
 
@@ -383,7 +383,7 @@ export async function listEmbeddingsModels() {
 
 // ── 5. TEXT & CHAT GENERATION ──
 
-export async function simpleTextGenerate({ prompt, model, system, json, temperature, seed, stream, safe }) {
+export async function simpleTextGenerate({ prompt, model, system, json, temperature, seed, stream }) {
   if (!prompt) {
     console.error('❌ Parameter --prompt erforderlich!');
     process.exit(1);
@@ -421,7 +421,7 @@ export async function chatCompletions(body = {}) {
 
 // ── 6. IMAGE, VIDEO, 3D & MEDIA GENERATION ──
 
-export async function generateImageGet({ prompt, model, width, height, seed, image, safe, outFile }) {
+export async function generateImageGet({ prompt, model, width, height, seed, image, outFile }) {
   if (!prompt) {
     console.error('❌ Parameter --prompt erforderlich!');
     process.exit(1);
@@ -463,7 +463,7 @@ export async function editImagesV1(body = {}) {
   return res;
 }
 
-export async function generateVideoGet({ prompt, model, width, height, resolution, duration, image, safe, outFile }) {
+export async function generateVideoGet({ prompt, model, width, height, resolution, duration, image, outFile }) {
   if (!prompt) {
     console.error('❌ Parameter --prompt erforderlich!');
     process.exit(1);
@@ -492,7 +492,7 @@ export async function generateVideoGet({ prompt, model, width, height, resolutio
   return res;
 }
 
-export async function generate3DGet({ prompt, model, safe, outFile }) {
+export async function generate3DGet({ prompt, model, outFile }) {
   if (!prompt) {
     console.error('❌ Parameter --prompt erforderlich!');
     process.exit(1);
@@ -518,7 +518,7 @@ export async function generate3DGet({ prompt, model, safe, outFile }) {
 
 // ── 7. AUDIO, SPEECH, VOICE & EMBEDDINGS ──
 
-export async function generateAudioGet({ text, model, instructions, voice, safe, outFile }) {
+export async function generateAudioGet({ text, model, instructions, voice, outFile }) {
   if (!text) {
     console.error('❌ Parameter --text erforderlich!');
     process.exit(1);
