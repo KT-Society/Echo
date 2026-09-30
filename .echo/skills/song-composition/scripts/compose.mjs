@@ -245,6 +245,16 @@ function normalizeTail(input) {
   const isFinalChorus = (block) => /^\s*\[[^\]]*final chorus[^\]]*\]/i.test(block);
   const isOutro = (block) => /^\s*\[[^\]]*outro[^\]]*\]/i.test(block);
 
+  // 0) Ein Song hat genau EINEN [Final Chorus]. Kommt der Nachzieh-Lauf mit mehreren,
+  //    werden alle bis auf den letzten zu [Chorus] — ein früherer ist schließlich nicht final.
+  const finalPositions = blocks.map((block, index) => (isFinalChorus(block) ? index : -1)).filter((index) => index !== -1);
+  if (finalPositions.length > 1) {
+    for (const position of finalPositions.slice(0, -1)) {
+      blocks[position] = blocks[position].replace(/^(\s*)\[([^\]]*final chorus[^\]]*)\]/i, (_match, space, inner) => `${space}[${inner.replace(/final\s*/i, '').trim()}]`);
+    }
+    notes.push(`doppelten [Final Chorus] zu [Chorus] umbenannt (${finalPositions.length - 1}x)`);
+  }
+
   // 1) [Outro] ans Ende — bedingungslos, kein Index-Vergleich.
   const outroIndex = blocks.map(isOutro).lastIndexOf(true);
   if (outroIndex !== -1 && outroIndex !== blocks.length - 1) {
