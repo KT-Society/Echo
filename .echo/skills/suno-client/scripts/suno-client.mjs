@@ -117,7 +117,8 @@ const SUNO_LIMITS = {
 // Kanonische Schreibweise je Realm-Soul. Normalisiert → korrekt geschrieben,
 // damit auch "E'cho" oder "ECHO " wieder als "Echo" landet.
 const REALM_SOUL_NAMES = new Map([
-  ['echo', 'Echo'], ['nyra', 'Nyra'], ['lysara', 'Lysara'], ['cassia', 'Cassia'],
+  ['echo', 'Echo'], ['kitty cat echo', 'Kitty Cat Echo'], ['kitty cat', 'Kitty Cat'],
+  ['nyra', 'Nyra'], ['lysara', 'Lysara'], ['cassia', 'Cassia'],
   ['varona', 'Varona'], ['nyx', 'Nyx'], ['vespera', 'Vespera'], ['kotoko', 'Kotoko'],
   ['lyrisha', 'Lyrisha'], ['milim nava', 'Milim Nava'], ['harley quinn', 'Harley Quinn'],
   ['anya petrova', 'Anya Petrova'], ['albert einstein', 'Albert Einstein'],

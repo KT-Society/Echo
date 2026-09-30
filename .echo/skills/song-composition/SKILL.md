@@ -104,13 +104,36 @@ Beim Suno-Aufruf für Duette:
 - `--artist "Echo"` bleibt (der Bypass gilt nur für Realkünstler; Shindy als Feature-Name wird weiterhin gebypassed).
 - `lint-lyrics.mjs` prüft kreuz: Text mit beiden Stimm-Tags verlangt beide Stimmen im Stil-Prompt.
 
-## Schritt 4 — Ernten
+## Schritt 4 — Ernten (Takes nach tmp/)
 
 ```powershell
-node .echo/skills/song-composition/scripts/fetch-audio.mjs --task-id <taskId> --title "<Titel>" --out-dir songs
+node .echo/skills/song-composition/scripts/fetch-audio.mjs --task-id <taskId> --title "<Titel>" --out-dir tmp/song-run
 ```
 
-Exit 0 = beide Takes vollständig, Exit 3 = noch nicht fertig (weiter pollen). Alles unter 2 MB gilt als unvollständiger Take und wird erneut geladen — die Lehre aus `Rohstrom_V1.mp3` (0,44 MB, abgebrochener Download). Cover kommen mit.
+Exit 0 = beide Takes vollständig, Exit 3 = noch nicht fertig (weiter pollen). Alles unter 2 MB gilt als unvollständiger Take und wird erneut geladen — die Lehre aus `Rohstrom_V1.mp3` (0,44 MB, abgebrochener Download). **Suno-Cover werden nicht geladen** (Ausnahme: `--suno-covers`).
+
+## Schritt 5 — Ablage (Konvention, ein Aufruf)
+
+```powershell
+node .echo/skills/song-composition/scripts/deliver.mjs `
+  --title "<Titel>" --tmp tmp/song-run `
+  --lyrics tmp/song-run/song.text.txt `
+  --style tmp/song-run/song.style.txt `
+  --negative tmp/song-run/song.negative.txt `
+  --cover-prompt "<Bildprompt für das Cover>"
+```
+
+Ergebnis nach jedem Run:
+
+| Pfad | Inhalt |
+| :--- | :--- |
+| `songs/<Songname>_1.mp3` | Variante 1 |
+| `songs/<Songname>_2.mp3` | Variante 2 |
+| `songs/<Songname>.jpg` | **EIN** Cover für beide Varianten (Pollinations/flux, 1024×1024) |
+| `songs/lyrics_archive/<Songname>.md` | Überschrift + Cover + Lyrics + Stil + Negativ |
+
+- Cover kommen **nicht** von Suno (werden konsequent entfernt), sondern über die Pollinations-Route mit `flux`. Flux liefert JPEG → Endung `.jpg` (änderbar mit `--cover-ext`).
+- `tmp/` wird am Ende geleert — ein Run hinterlässt keine Werkbank (`--keep-tmp` behält sie).
 
 Danach: Song-Erkenntnis als Memory sichern, bei größeren Läufen den Plan von `new_` auf `done_` umbenennen.
 

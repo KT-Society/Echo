@@ -11,6 +11,9 @@
  *   node fetch-audio.mjs --task-id <id> --title "Meine Echo" [--out-dir songs]
  *   node fetch-audio.mjs --status <status.json> --title "Meine Echo" [--out-dir songs]
  *
+ * Suno-Cover werden NICHT geladen (Standard) — die Cover entstehen über die
+ * Pollinations-Route (deliver.mjs, ein Bild pro Song). Für den Ausnahmefall: --suno-covers.
+ *
  * Läuft in zwei Stufen, weil Suno erst liefert, wenn der Task SUCCESS ist:
  *   1) ohne Treffer  → Exit 3 (noch nicht fertig), Aufrufer pollt weiter
  *   2) mit Treffern  → Download, Exit 0
@@ -131,7 +134,7 @@ for (const take of takes) {
     console.log(`❌ ${path.basename(audioTarget)} — ${result.error}`);
   }
 
-  if (typeof take.imageUrl === 'string') {
+  if (typeof take.imageUrl === 'string' && flags['suno-covers']) {
     const coverTarget = path.join(outDir, `${title}_${suffix}.jpg`);
     const coverResult = await download(take.imageUrl, coverTarget, false);
     if (typeof coverResult === 'number') console.log(`🖼️ ${path.basename(coverTarget)} — ${(coverResult / 1024).toFixed(1)} KB`);
