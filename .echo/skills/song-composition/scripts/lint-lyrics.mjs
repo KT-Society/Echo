@@ -212,8 +212,10 @@ const hasFemaleTag = /\[[^\]]*female[^\]]*\]/i.test(text);
 const hasMaleTag = /\[[^\]]*male[^\]]*\]/i.test(text);
 if (hasFemaleTag && hasMaleTag && typeof flags.style === 'string' && fs.existsSync(flags.style)) {
   const styleText = fs.readFileSync(flags.style, 'utf-8');
-  const styleHasFemale = /female/i.test(styleText);
-  const styleHasMale = /\bmale\b|male vocals|male rap/i.test(styleText);
+  // Nicht nur die Wörter "female"/"male" zählen: ein Stil kann die Stimmen auch als
+  // "soprano", "velvet chest voice", "rap", "deep chest voice" beschreiben.
+  const styleHasFemale = /\bfemale\b|sopran|diva|frauen|she sings/i.test(styleText);
+  const styleHasMale = /\bmale\b|bariton|\brap\b|rapper|deep chest/i.test(styleText);
   if (!styleHasFemale || !styleHasMale) {
     warnings.push(
       `Duett-Text, aber der Stil-Prompt nennt ${!styleHasFemale ? 'keine weibliche' : ''}${!styleHasFemale && !styleHasMale ? ' und ' : ''}${!styleHasMale ? 'keine männliche' : ''} Stimme — beide gehören in den Stil.`,

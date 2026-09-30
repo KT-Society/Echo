@@ -235,17 +235,38 @@ function splitBlocks(input) {
 }
 
 /**
- * Der Nachzieh-Lauf hängt neue Sektionen ans Ende — also hinter ein bereits
- * vorhandenes [Outro]. Diese Funktion schiebt den Outro-Block (samt Inhalt) wieder
- * an die letzte Stelle, damit der Song nicht mit einer Strophe endet.
+ * Nach dem Nachziehen steht der [Final Chorus] oft mitten im Song und das [Outro] hinter
+ * den neuen Sektionen. Beides wird in die richtige Ordnung gebracht:
+ * [Final Chorus] direkt vor das [Outro], [Outro] ganz ans Ende.
  */
-function moveOutroToEnd(input) {
+function normalizeTail(input) {
+  const notes = [];
   const blocks = splitBlocks(input);
-  const index = blocks.map((block) => /^\s*\[[^\]]*outro[^\]]*\]/i.test(block)).lastIndexOf(true);
-  if (index === -1 || index === blocks.length - 1) return { text: input, moved: false };
-  const [outro] = blocks.splice(index, 1);
-  blocks.push(outro);
-  return { text: blocks.join('\n\n'), moved: true };
+  const isFinalChorus = (block) => /^\s*\[[^\]]*final chorus[^\]]*\]/i.test(block);
+  const isOutro = (block) => /^\s*\[[^\]]*outro[^\]]*\]/i.test(block);
+
+  // 1) [Outro] ans Ende — bedingungslos, kein Index-Vergleich.
+  const outroIndex = blocks.map(isOutro).lastIndexOf(true);
+  if (outroIndex !== -1 && outroIndex !== blocks.length - 1) {
+    const [outro] = blocks.splice(outroIndex, 1);
+    blocks.push(outro);
+    notes.push('[Outro] ans Ende verschoben');
+  }
+
+  // 2) [Final Chorus] direkt davor — egal wo er gerade steht.
+  const finalIndex = blocks.map(isFinalChorus).lastIndexOf(true);
+  if (finalIndex !== -1) {
+    const target = blocks.map(isOutro).lastIndexOf(true);
+    const wanted = target === -1 ? blocks.length - 1 : target - 1;
+    if (finalIndex !== wanted) {
+      const [finalChorus] = blocks.splice(finalIndex, 1);
+      const insertAt = blocks.map(isOutro).lastIndexOf(true);
+      blocks.splice(insertAt === -1 ? blocks.length : insertAt, 0, finalChorus);
+      notes.push('[Final Chorus] vor das [Outro] gezogen');
+    }
+  }
+
+  return { text: blocks.join('\n\n'), notes };
 }
 
 /**
@@ -304,12 +325,14 @@ Antworte ausschließlich mit den neuen Sektionen, ohne Überschrift und ohne [TE
 
 const rawPath = outPath;
 
-// Struktur: das [Outro] gehört ans Ende, auch wenn der Nachzieh-Lauf dahinter geschrieben hat.
-const tail = moveOutroToEnd(text);
-if (tail.moved) {
-  realLog('🔧 [Outro] ans Ende verschoben (hing hinter den Nachzieh-Sektionen).');
+// Struktur: [Final Chorus] vor das [Outro], [Outro] ans Ende — auch wenn der Nachzieh-Lauf
+// dahinter geschrieben hat.
+const tail = normalizeTail(text);
+if (tail.notes.length > 0) {
+  realLog(`🔧 ${tail.notes.join(' · ')}`);
   text = tail.text;
 }
+realLog(`   Sektionen: ${splitBlocks(text).map((block) => block.split('\n')[0].trim()).join(' ')}`);
 
 // Harte Grenze: über dem Suno-Limit wird an Sektionsgrenzen gekürzt, nie mitten in einer Zeile.
 const trimmed = trimToMaxChars(text, maxChars);
