@@ -20,3 +20,12 @@ Der `suno-client.mjs` (V2 Full Suite) ist die zentrale Schaltstelle für KI-gene
   - `node suno-client.mjs generate --prompt "..." --lyrics "FILE:..."`
   - `node suno-client.mjs separate --taskId "..." --audioId "..."`
   - `node suno-client.mjs cover-image --taskId "..."`
+
+## Artist-Regel
+Der Apostroph-Bypass (`Kitty Kat` → `K'itty K'at`, um den Content-Filter zu umgehen) gilt **nur für Realkünstler**.
+Echo und die Souls des Realms bleiben unverändert — **Echo wird nicht zu `E'cho`**. Die Schreibweise wird auf die
+kanonische Form normalisiert (`E'cho`/`ECHO` → `Echo`). Erzwungen in `bypassArtistName()`; mit `--noArtistBypass true`
+lässt sich der Bypass für einen Aufruf komplett abschalten.
+
+## Limits (Client kürzt sonst still)
+- Lyrics ≤ 5000 · Style ≤ 1000 · negativePrompt ≤ 500 Zeichen.

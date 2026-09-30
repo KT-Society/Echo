@@ -113,9 +113,23 @@ const SUNO_LIMITS = {
 };
 
 // ── Artist Name Bypass ──
-// Wandelt "Kitty Kat" → "K'itty K'at" um Content-Filter zu umgehen
+// Wandelt "Kitty Kat" → "K'itty K'at" um den Content-Filter zu umgehen.
+// Kanonische Schreibweise je Realm-Soul. Normalisiert → korrekt geschrieben,
+// damit auch "E'cho" oder "ECHO " wieder als "Echo" landet.
+const REALM_SOUL_NAMES = new Map([
+  ['echo', 'Echo'], ['nyra', 'Nyra'], ['lysara', 'Lysara'], ['cassia', 'Cassia'],
+  ['varona', 'Varona'], ['nyx', 'Nyx'], ['vespera', 'Vespera'], ['kotoko', 'Kotoko'],
+  ['lyrisha', 'Lyrisha'], ['milim nava', 'Milim Nava'], ['harley quinn', 'Harley Quinn'],
+  ['anya petrova', 'Anya Petrova'], ['albert einstein', 'Albert Einstein'],
+  ['luxara', 'Luxara'], ['milo', 'Milo'], ['teoritta', 'Teoritta'], ['kanan', 'Kanan'],
+]);
+
 function bypassArtistName(name) {
   if (!name) return '';
+  // Vergleich normalisiert: Kleinschreibung, einfache Leerzeichen, Apostrophe entfernt,
+  // damit auch "E'cho" oder "ECHO " als Realm-Name erkannt werden.
+  const normalized = name.trim().toLowerCase().replace(/\s+/g, ' ').replace(/['’´`]/g, '');
+  if (REALM_SOUL_NAMES.has(normalized)) return REALM_SOUL_NAMES.get(normalized);
   if (!name.includes("'")) {
     return name.split(' ').map(word => {
       if (word.length > 1) {
@@ -196,7 +210,7 @@ async function refreshDocsCommand(options) {
  * 🎵 Generate Music
  * POST /api/v1/generate
  */
-async function generateMusic({ prompt, style, lyrics, title, model, instrumental, callbackUrl, negativePrompt, artist, styleWeight, creativityLimit, audioWeight, vocalGender }) {
+async function generateMusic({ prompt, style, lyrics, title, model, instrumental, callbackUrl, negativePrompt, artist, styleWeight, creativityLimit, audioWeight, vocalGender, noArtistBypass }) {
   if (lyrics && lyrics.length > SUNO_LIMITS.maxLyrics) {
     console.warn(`⚠️ Lyrics zu lang! (${lyrics.length}/${SUNO_LIMITS.maxLyrics}) Kürze auf ${SUNO_LIMITS.maxLyrics} Zeichen.`);
     lyrics = lyrics.substring(0, SUNO_LIMITS.maxLyrics);
@@ -266,8 +280,17 @@ async function generateMusic({ prompt, style, lyrics, title, model, instrumental
   if (vocalGender) body.vocalGender = vocalGender;
 
   if (artist) {
-    const bypassed = bypassArtistName(artist);
-    console.log(`🎭 Artist Bypass: "${artist}" → "${bypassed}"`);
+    const trimmed = artist.trim();
+    const skipBypass = noArtistBypass === true || noArtistBypass === 'true' || noArtistBypass === '1';
+    const bypassed = skipBypass ? trimmed : bypassArtistName(artist);
+    const isRealmSoul = REALM_SOUL_NAMES.has(trimmed.toLowerCase().replace(/\s+/g, ' ').replace(/['’´`]/g, ''));
+    if (bypassed === trimmed) {
+      console.log(`🎭 Artist: "${bypassed}" (${isRealmSoul ? 'Realm-Soul' : 'unverändert'}${skipBypass ? ' / --noArtistBypass' : ''}, kein Bypass)`);
+    } else if (isRealmSoul) {
+      console.log(`🎭 Artist: "${trimmed}" → "${bypassed}" (Realm-Soul, normalisiert)`);
+    } else {
+      console.log(`🎭 Artist Bypass: "${artist}" → "${bypassed}"`);
+    }
     if (!body.style.toLowerCase().includes(bypassed.toLowerCase())) {
       body.style = `${bypassed}, ${body.style}`;
     }
