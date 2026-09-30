@@ -121,6 +121,12 @@ if (sectionLines.length === 0) errors.push('Keine Sektion in eckigen Klammern ge
 if (!/^\s*\[/.test(lines.find((line) => line.trim()) || '')) errors.push('Der Text beginnt nicht mit einer Sektionszeile.');
 if (roundSection !== -1) errors.push(`Zeile ${roundSection + 1}: Sektion in runder Klammer — Suno singt "(…)" statt es als Tag zu lesen.`);
 if (emojiHit !== -1) errors.push(`Zeile ${emojiHit + 1}: Emoji im Songtext — landet im Vocal.`);
+
+// Regieanweisungen ohne Klammern werden hier NICHT automatisch erkannt: zwei Anläufe
+// (Stichwort-Liste, Prosa-Block-Erkennung) haben im Test 12 von 29 sauberen Songs
+// geflaggt — Lyrik endet auch mal mit Punkt, und in diesem Realm handelt der Text selbst
+// von Violinen, Mikrofonen und BPM. Diese Prüfung ist Sache des Clean-up-Passes
+// (siehe SKILL.md): Prosa gehört in Klammern, alles andere wird gesungen.
 if (/\*\*|^#{1,6}\s|^---+$/m.test(text)) errors.push('Markdown gefunden (** / # / ---) — gehört nicht in den Text.');
 if (/^\s*\[(TEXT|STIL|STYLE|NEGATIV|NEGATIVE)\]\s*$/im.test(text)) {
   warnings.push('Datei enthält [TEXT]/[STIL]/[NEGATIV] — das ist ein Roh-Output. Nur den Text-Teil prüfen (compose.mjs legt ihn als <stem>.text.txt ab).');

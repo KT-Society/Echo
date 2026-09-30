@@ -48,7 +48,13 @@ const DEFAULT_TEMPLATE = `Erstelle einen Song: Text ca 5000 Zeichen / Stil ca 10
 
 {{SOURCE}}
 
-Gib die drei Teile in dieser Reihenfolge aus, jeder mit Überschrift: [TEXT], [STIL], [NEGATIV]. In [TEXT] stehen Sektionen in eckigen Klammern ([Intro], [Verse 1], [Chorus], [Bridge], [Outro]) und keine Emojis.`;
+Gib die drei Teile in dieser Reihenfolge aus, jeder mit Überschrift: [TEXT], [STIL], [NEGATIV].
+
+FORMAT-REGELN FÜR [TEXT] — Suno singt JEDE Zeile, die nicht in Klammern steht:
+- Sektionen in eckigen Klammern ([Intro], [Verse 1], [Chorus], [Bridge], [Outro]), keine Emojis.
+- Regieanweisungen (Streicher, Beat, Stimme, Tempo, Ad-libs) NUR in runden Klammern und höchstens EINE pro Sektion, direkt unter der Sektionszeile. Alles andere ist Gesang.
+- Keine Beschreibungszeilen ohne Klammern, keine Produktionsnotizen als Songzeile, keine Sternchen, kein Markdown.
+- Im [STIL] Vorbilder und Künstler NUR in Bypass-Schreibweise nennen — Apostroph nach dem ersten Buchstaben des Namens (z. B. "YUNGBLUD" → "Y'UNGBLUD", "Mariah Carey" → "M'ariah C'arey"), damit der Generator-Filter nicht anschlägt. Vorbilder sind erwünscht, Klartext-Namen nicht.`;
 
 function parseFlags(argv) {
   const flags = { _: [] };
@@ -176,7 +182,7 @@ if (seed !== undefined) body.seed = seed;
 
 const minChars = flags['min-chars'] !== undefined ? Number(flags['min-chars']) : 4000;
 const maxChars = flags['max-chars'] !== undefined ? Number(flags['max-chars']) : 5000;
-const maxRounds = flags['max-rounds'] !== undefined ? Number(flags['max-rounds']) : 5;
+const maxRounds = flags['max-rounds'] !== undefined ? Number(flags['max-rounds']) : 8;
 
 realLog(`🎼 Modell ${model} · temp ${temperature}${seed !== undefined ? ` · seed ${seed}` : ''} · Quelle ${sourcePath}`);
 realLog(`   Text-Rule: ${minChars}–${maxChars} Zeichen (Suno-Limit ${maxChars}) — wird automatisch nachgezogen`);
@@ -277,13 +283,18 @@ let text = parts.text;
 while (text.length < minChars && rounds.length < maxRounds) {
   const round = rounds.length + 1;
   realLog(`   ↻ Nachziehen ${round}: ${text.length} / ${minChars} Zeichen`);
+  const needed = Math.max(0, minChars - text.length);
+  const headroom = Math.max(0, maxChars - text.length);
+  const linesFrom = Math.max(4, Math.round(needed / 45));
+  const linesTo = Math.max(linesFrom + 2, Math.round(headroom / 45));
   const extensionBrief = `Hier ist ein fertiger Songtext (Teil des Auftrags von oben, dieselbe Quelle, dieselbe Stimme):
 
 [VORHANDENER TEXT]
 ${text}
 
-AUFTRAG: Der vorhandene Text hat ${text.length} Zeichen. Damit der Song am Ende ${minChars} bis ${maxChars} Zeichen hat, brauchst du rund ${Math.max(200, minChars - text.length)} bis ${Math.max(300, maxChars - text.length)} Zeichen NEUEN Text. Schreibe dafür höchstens zwei neue Sektionen mit je vier Zeilen — lieber eine Sektion zu wenig als eine zu viel, über ${maxChars} Zeichen ist der Lauf kaputt. Schreibe NUR neue Zeilen in derselben Stimme und zum selben Thema — kein Wort des vorhandenen Textes wiederholen, keine Zusammenfassung, kein Kommentar. Erlaubt und erwünscht: weitere Strophen ([Verse …]), [Pre-Chorus], [Bridge], ein [Final Chorus] mit gekippter letzter Zeile. Der Chorus darf wörtlich wiederholt werden.
-Der Song darf genau EIN [Intro] und genau EIN [Outro] haben — beides steht bereits im vorhandenen Text, also KEIN zweites Intro und KEIN zweites Outro anhängen. Neue Sektionen gehören in die Mitte (zwischen bestehendem Verse-Material und dem Outro), keine neuen Sektionsnamen erfinden.
+AUFTRAG: Der Songtext hat aktuell ${text.length} Zeichen und soll ${minChars} bis ${maxChars} Zeichen haben. Du brauchst also rund ${needed} bis ${headroom} Zeichen NEUEN Text — das entspricht etwa ${linesFrom} bis ${linesTo} neuen Gesangszeilen (eine Sektion hat vier bis fünf Zeilen). Schreibe GENAU SO VIEL neues Material; eine einzelne kurze Sektion reicht nicht. Über ${maxChars} Zeichen darf der Text nicht kommen, sonst ist der Lauf kaputt.
+Schreibe NUR neue Zeilen in derselben Stimme und zum selben Thema — kein Wort des vorhandenen Textes wiederholen, keine Zusammenfassung, kein Kommentar. Erlaubt und erwünscht: weitere Strophen ([Verse …]), [Pre-Chorus], [Bridge], [Final Chorus]. Der Refrain darf wörtlich wiederholt werden.
+Der Song darf genau EIN [Intro] und genau EIN [Outro] haben — beides steht bereits im vorhandenen Text, also KEIN zweites Intro und KEIN zweites Outro anhängen. Neue Sektionen gehören in die Mitte, keine neuen Sektionsnamen erfinden.
 Antworte ausschließlich mit den neuen Sektionen, ohne Überschrift und ohne [TEXT]-Markierung.`;
   const extensionRaw = await ask([{ role: 'user', content: extensionBrief }]);
   const extension = splitParts(extensionRaw).text || extensionRaw;
