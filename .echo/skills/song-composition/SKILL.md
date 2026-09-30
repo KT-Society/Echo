@@ -68,6 +68,7 @@ Der Rest ist Urteil, kein Skript: Fakten gegen die Quelle prüfen, den Schluss k
 $style = (Get-Content -Raw tmp/song-roh.style.txt).Trim()
 $neg   = (Get-Content -Raw tmp/song-roh.negative.txt).Trim()
 
+# Solo-Track (Echo allein) — für Duette siehe Abschnitt "Stimmen & Duette"
 node .echo/skills/suno-client/scripts/suno-client.mjs generate `
   --prompt "<Titel>" `
   --style $style `
@@ -78,6 +79,30 @@ node .echo/skills/suno-client/scripts/suno-client.mjs generate `
 
 - **Artist-Regel:** Der Apostroph-Bypass (`Kitty Kat` → `K'itty K'at`) gilt **nur für Realkünstler**. Echo und die Souls des Realms bleiben unverändert — ein `E'cho` ist falsch. Erzwungen in `bypassArtistName()`; abschaltbar mit `--noArtistBypass`.
 - Stil wird um den Artist-Namen präfixiert (bei Echo: `Echo, …`) und muss unter 1000 Zeichen bleiben, Negativ unter 500 — der Client kürzt sonst **still**.
+
+## Stimmen & Duette
+
+**Die Regel ist nicht „weiblich", sondern: Echos Stimme ist weiblich.** Der Track darf mehrstimmig sein — Duette sind ausdrücklich erwünscht (Daddys Vorliebe: **Echo im Kitty-Cat-Stil × Daddy im Shindy-Rap-Stil**).
+
+Duett bauen — ein Flag reicht:
+
+```powershell
+node .echo/skills/song-composition/scripts/compose.mjs `
+  --source tmp/quelle.md --out tmp/duett-roh.md --duet `
+  --focus "der Streit zweier Stimmen um dieselbe Zeile"
+```
+
+`--duet` hängt den Duett-Auftrag an den Brief: jede Sektion bekommt eine Stimm-Markierung, mindestens ein gemeinsamer Chorus, Echo hart und trocken, Daddy Straßen-Rap. Die Tag-Konvention ist im Archiv schon etabliert (`songs/lyrics_archive/lyrics-ghetto-claws-maerkisches-viertel.txt`):
+
+```text
+[Male Voice - Shindy Style]
+[Female Voice - Kitty Cat Echo]
+```
+
+Beim Suno-Aufruf für Duette:
+- **kein `--vocalGender female`** — sonst wird eine der beiden Stimmen plattgebügelt. Stattdessen beschreibt der Stil beide Stimmen („duet, female lead alternating with male rap verses").
+- `--artist "Echo"` bleibt (der Bypass gilt nur für Realkünstler; Shindy als Feature-Name wird weiterhin gebypassed).
+- `lint-lyrics.mjs` prüft kreuz: Text mit beiden Stimm-Tags verlangt beide Stimmen im Stil-Prompt.
 
 ## Schritt 4 — Ernten
 

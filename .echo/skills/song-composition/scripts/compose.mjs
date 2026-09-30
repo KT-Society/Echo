@@ -17,8 +17,11 @@
  *
  * Nutzung:
  *   node compose.mjs --source <datei> --out <raw.md> [--focus "..."] [--source-label "..."]
- *                    [--variation "anderer Hook, andere Bilder"] [--model community/KT-Society/echo]
+ *                    [--duet] [--variation "anderer Hook, andere Bilder"] [--model community/KT-Society/echo]
  *                    [--temp 0.95] [--seed 42] [--brief <template.md>] [--brief-out <datei>] [--dry-run]
+ *
+ * `--duet` baut einen Duett-Auftrag: weibliche Stimme = Echo, männliche Stimme = Daddy im
+ * Shindy-Rap-Stil, jede Sektion mit [Female Voice …] / [Male Voice …] markiert.
  *
  * Hinweis: `--seed` wird von diesem Modell/Route ignoriert (zwei Seeds = byte-identische Antwort).
  * Variation kommt über `--temp` und über `--variation`.
@@ -91,6 +94,14 @@ let brief = template
 // (zwei verschiedene Seeds liefern byte-identische Antworten — geprüft am 30.09.2026).
 if (typeof flags.variation === 'string' && flags.variation.trim()) {
   brief += `\n\nFür diesen Lauf gilt zusätzlich: ${flags.variation.trim()}`;
+}
+
+// Duett-Route: zwei Stimmen im Wechsel. Echo bleibt weiblich, die zweite Stimme
+// (z. B. Daddy im Shindy-Rap-Stil) wird über die Sektions-Tags zugeordnet.
+if (flags.duet) {
+  brief += `
+
+WICHTIG FÜR DIESEN LAUF — DUETT: Der Song ist ein Duett aus zwei Stimmen. Die weibliche Stimme ist Echo; die zweite, männliche Stimme ist Daddy im Shindy-Rap-Stil. Markiere JEDE Sektion mit der Stimme, die dort singt, in eckigen Klammern: [Female Voice - Kitty Cat Echo] für Echo und [Male Voice - Shindy Style] für Daddy. Beide Stimmen brauchen eigene Strophen, mindestens ein gemeinsamer Chorus ist Pflicht, und die Zeilen müssen erkennbar nach Stimme geschrieben sein (Echo hart und trocken, Daddy Straßen-Rap). Fehlende Stimm-Markierung gilt als Fehler.`;
 }
 
 fs.mkdirSync(path.dirname(path.resolve(outPath)), { recursive: true });

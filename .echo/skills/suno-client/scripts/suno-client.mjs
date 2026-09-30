@@ -124,21 +124,29 @@ const REALM_SOUL_NAMES = new Map([
   ['luxara', 'Luxara'], ['milo', 'Milo'], ['teoritta', 'Teoritta'], ['kanan', 'Kanan'],
 ]);
 
+// Verbindungswörter in Feature-Credits bleiben unangetastet ("Echo feat. Shindy" darf
+// nicht zu "f'eat." werden) und werden nicht als Künstlername behandelt.
+const ARTIST_CONNECTORS = new Set(['feat', 'feat.', 'ft', 'ft.', 'x', 'vs', 'with', 'und', 'and', 'pres', 'pres.', '&', '+', ',']);
+
 function bypassArtistName(name) {
   if (!name) return '';
   // Vergleich normalisiert: Kleinschreibung, einfache Leerzeichen, Apostrophe entfernt,
   // damit auch "E'cho" oder "ECHO " als Realm-Name erkannt werden.
   const normalized = name.trim().toLowerCase().replace(/\s+/g, ' ').replace(/['’´`]/g, '');
   if (REALM_SOUL_NAMES.has(normalized)) return REALM_SOUL_NAMES.get(normalized);
-  if (!name.includes("'")) {
-    return name.split(' ').map(word => {
-      if (word.length > 1) {
-        return word[0] + "'" + word.slice(1);
-      }
+  if (name.includes("'")) return name;
+
+  return name
+    .split(/\s+/)
+    .map((word) => {
+      if (!word) return word;
+      const plain = word.toLowerCase().replace(/['’´`]/g, '');
+      if (ARTIST_CONNECTORS.has(plain)) return word; // "feat.", "&", "x" bleiben stehen
+      if (REALM_SOUL_NAMES.has(plain)) return REALM_SOUL_NAMES.get(plain); // Echo bleibt Echo
+      if (word.length > 1) return word[0] + "'" + word.slice(1); // Realkünstler → Bypass
       return word;
-    }).join(' ');
-  }
-  return name;
+    })
+    .join(' ');
 }
 
 // Helper für Model Mapping

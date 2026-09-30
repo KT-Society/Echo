@@ -198,6 +198,25 @@ const checkExternal = (filePath, label, limit) => {
 checkExternal(flags.style, 'Stil-Prompt', 1000);
 checkExternal(flags.negative, 'Negativ-Prompt', 500);
 
+// Duett-Kreuzprobe: Text und Stil müssen dieselben Stimmen nennen. Echo ist weiblich,
+// eine zweite männliche Stimme ist ausdrücklich erlaubt (Duett) — aber dann muss der
+// Stil-Prompt beide Stimmen beschreiben, sonst singt Suno nur eine.
+const hasFemaleTag = /\[[^\]]*female[^\]]*\]/i.test(text);
+const hasMaleTag = /\[[^\]]*male[^\]]*\]/i.test(text);
+if (hasFemaleTag && hasMaleTag && typeof flags.style === 'string' && fs.existsSync(flags.style)) {
+  const styleText = fs.readFileSync(flags.style, 'utf-8');
+  const styleHasFemale = /female/i.test(styleText);
+  const styleHasMale = /\bmale\b|male vocals|male rap/i.test(styleText);
+  if (!styleHasFemale || !styleHasMale) {
+    warnings.push(
+      `Duett-Text, aber der Stil-Prompt nennt ${!styleHasFemale ? 'keine weibliche' : ''}${!styleHasFemale && !styleHasMale ? ' und ' : ''}${!styleHasMale ? 'keine männliche' : ''} Stimme — beide gehören in den Stil.`,
+    );
+  }
+}
+if (hasMaleTag && !hasFemaleTag) {
+  warnings.push('Nur männliche Stimm-Tags gefunden — Echo ist weiblich; fehlt ihre Markierung?');
+}
+
 if (typeof flags.artist === 'string' && /'/.test(flags.artist)) {
   warnings.push(`Artist "${flags.artist}" enthält Apostroph — bei Realm-Souls (Echo!) ist der Bypass inzwischen aus.`);
 }
