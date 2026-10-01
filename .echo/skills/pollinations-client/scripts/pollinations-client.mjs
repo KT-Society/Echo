@@ -27,8 +27,13 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Config ──
-const API_BASE = process.env.POLLINATIONS_API_BASE || 'https://gen.pollinations.ai';
+let API_BASE = process.env.POLLINATIONS_API_BASE || 'https://gen.pollinations.ai';
 let API_KEY = process.env.POLLINATIONS_API_KEY || process.env.POLLINATIONS_TOKEN;
+
+// Safety override: undefined ⇒ the skill's Safe-Mode default (`nsfw: true`).
+// Set via `--safe <spec>` or POLLINATIONS_SAFE=privacy,secrets (docs: the
+// comma-separated list is accepted as a query param or `Pollinations-Safe` header).
+let SAFE_MODE = process.env.POLLINATIONS_SAFE;
 
 // Versuche API-Key aus .env zu laden
 try {
@@ -58,7 +63,9 @@ function apiRequest(method, endpoint, body = null, headers = {}, isBuffer = fals
 
     const requestHeaders = {
       'User-Agent': 'Echo-Pollinations-Client/1.0',
-      'nsfw': 'true',
+      // Safe-Mode default is off (`nsfw: true`); an explicit SAFE_MODE replaces
+      // it with the documented `safe` header instead of conflicting with it.
+      ...(SAFE_MODE === undefined ? { nsfw: 'true' } : { safe: SAFE_MODE }),
       ...headers,
     };
 
@@ -421,7 +428,7 @@ export async function chatCompletions(body = {}) {
 
 // ── 6. IMAGE, VIDEO, 3D & MEDIA GENERATION ──
 
-export async function generateImageGet({ prompt, model, width, height, seed, image, outFile }) {
+export async function generateImageGet({ prompt, model, width, height, seed, image, referenceImages, quality, outFile }) {
   if (!prompt) {
     console.error('❌ Parameter --prompt erforderlich!');
     process.exit(1);
@@ -433,6 +440,8 @@ export async function generateImageGet({ prompt, model, width, height, seed, ima
   if (height) queryParams.append('height', height);
   if (seed !== undefined) queryParams.append('seed', seed);
   if (image) queryParams.append('image', image);
+  if (referenceImages) queryParams.append('reference_images', referenceImages);
+  if (quality) queryParams.append('quality', quality);
 
   const endpoint = `/image/${encodeURIComponent(prompt)}?${queryParams.toString()}`;
   console.log(`🖼️ Generiere Bild (GET): ${endpoint}...`);
@@ -463,7 +472,7 @@ export async function editImagesV1(body = {}) {
   return res;
 }
 
-export async function generateVideoGet({ prompt, model, width, height, resolution, duration, image, outFile }) {
+export async function generateVideoGet({ prompt, model, width, height, resolution, duration, aspectRatio, audio, seed, quality, image, referenceImages, outFile }) {
   if (!prompt) {
     console.error('❌ Parameter --prompt erforderlich!');
     process.exit(1);
@@ -475,7 +484,12 @@ export async function generateVideoGet({ prompt, model, width, height, resolutio
   if (height) queryParams.append('height', height);
   if (resolution) queryParams.append('resolution', resolution);
   if (duration) queryParams.append('duration', duration);
+  if (aspectRatio) queryParams.append('aspectRatio', aspectRatio);
+  if (audio !== undefined) queryParams.append('audio', audio);
+  if (seed !== undefined) queryParams.append('seed', seed);
+  if (quality) queryParams.append('quality', quality);
   if (image) queryParams.append('image', image);
+  if (referenceImages) queryParams.append('reference_images', referenceImages);
 
   const endpoint = `/video/${encodeURIComponent(prompt)}?${queryParams.toString()}`;
   console.log(`🎬 Generiere Video (GET): ${endpoint}...`);
@@ -492,16 +506,19 @@ export async function generateVideoGet({ prompt, model, width, height, resolutio
   return res;
 }
 
-export async function generate3DGet({ prompt, model, outFile }) {
-  if (!prompt) {
-    console.error('❌ Parameter --prompt erforderlich!');
+export async function generate3DGet({ prompt, model, resolution, image, seed, outFile }) {
+  if (!prompt && !image) {
+    console.error('❌ Parameter --prompt oder --image erforderlich!');
     process.exit(1);
   }
 
   const queryParams = new URLSearchParams();
   if (model) queryParams.append('model', model);
+  if (resolution) queryParams.append('resolution', resolution);
+  if (image) queryParams.append('image', image);
+  if (seed !== undefined) queryParams.append('seed', seed);
 
-  const endpoint = `/3d/${encodeURIComponent(prompt)}?${queryParams.toString()}`;
+  const endpoint = `/3d/${encodeURIComponent(prompt || '')}?${queryParams.toString()}`;
   console.log(`📦 Generiere 3D Objekt (GET): ${endpoint}...`);
 
   const res = await apiRequest('GET', endpoint, null, {}, true);
@@ -513,6 +530,37 @@ export async function generate3DGet({ prompt, model, outFile }) {
     console.log(`✅ 3D Objekt gespeichert: ${savePath} (${res.buffer.length} Bytes)`);
     return { savePath, buffer: res.buffer };
   }
+  return res;
+}
+
+/** POST variant of `/3d/{prompt}` — JSON body, supports `trellis-2` resolution tiers. */
+export async function generate3DPost({ prompt, model, resolution, image, seed, outFile }) {
+  if (!prompt && !image) {
+    console.error('❌ Parameter --prompt oder --image erforderlich!');
+    process.exit(1);
+  }
+
+  const body = {
+    prompt: prompt || undefined,
+    model: model || undefined,
+    resolution: resolution || undefined,
+    image: image || undefined,
+    seed: seed !== undefined ? Number(seed) : undefined,
+  };
+
+  const endpoint = `/3d/${encodeURIComponent(prompt || '')}`;
+  console.log(`📦 Generiere 3D Objekt (POST): ${endpoint}...`);
+
+  const res = await apiRequest('POST', endpoint, body, {}, true);
+
+  if (res.buffer) {
+    const fileName = outFile || `pollinations_3d_${Date.now()}.glb`;
+    const savePath = path.resolve(process.cwd(), fileName);
+    fs.writeFileSync(savePath, res.buffer);
+    console.log(`✅ 3D Objekt gespeichert: ${savePath} (${res.buffer.length} Bytes)`);
+    return { savePath, buffer: res.buffer };
+  }
+  console.log('✅ 3D Antwort:', JSON.stringify(res, null, 2));
   return res;
 }
 
@@ -705,18 +753,77 @@ export async function createEmbeddingsV1(body = {}) {
 
 // ── 8. MEDIA UPLOAD, GALLERIES & STORAGE ──
 
-export async function uploadMediaFile(filePath, tags = '') {
+/** Best-effort MIME type for `/upload` (multipart needs a real content type). */
+function mimeTypeFor(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  const map = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.avif': 'image/avif',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
+    '.m4a': 'audio/mp4',
+    '.ogg': 'audio/ogg',
+    '.flac': 'audio/flac',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mov': 'video/quicktime',
+    '.glb': 'model/gltf-binary',
+  };
+  return map[ext] || 'application/octet-stream';
+}
+
+/**
+ * Upload a local file to `/upload`.
+ *
+ * The docs accept both `multipart/form-data` (field `file`) and a JSON body
+ * with a base64 `data` string. Multipart is the default because it streams
+ * large media without inflating it by ~33%; pass `multipart: false` (CLI:
+ * `--json true`) to force the base64 form. An optional `tags` value publishes
+ * the upload into each tag's public gallery.
+ */
+export async function uploadMediaFile(filePath, tags = '', { multipart = true } = {}) {
   if (!filePath || !fs.existsSync(filePath)) {
     console.error(`❌ Lokale Datei nicht gefunden: ${filePath}`);
     process.exit(1);
   }
 
-  const fileBuffer = fs.readFileSync(filePath);
-  const base64Data = fileBuffer.toString('base64');
+  if (multipart) {
+    try {
+      console.log(`📤 Lade Datei hoch (multipart): ${filePath}...`);
+      const form = new FormData();
+      form.append(
+        'file',
+        new Blob([fs.readFileSync(filePath)], { type: mimeTypeFor(filePath) }),
+        path.basename(filePath)
+      );
+      if (tags) form.append('tags', tags);
 
-  console.log(`📤 Lade Datei hoch: ${filePath}...`);
+      const response = await fetch(`${API_BASE}/upload`, {
+        method: 'POST',
+        headers: {
+          ...(SAFE_MODE === undefined ? { nsfw: 'true' } : { safe: SAFE_MODE }),
+          ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
+        },
+        body: form,
+      });
+      const json = await response.json().catch(() => null);
+      console.log(`✅ HTTP ${response.status} · Upload Antwort:`, JSON.stringify(json, null, 2));
+      if (response.ok) return json;
+      console.warn('⚠️ Multipart-Upload fehlgeschlagen, versuche Base64-JSON-Fallback...');
+    } catch (error) {
+      console.warn(`⚠️ Multipart-Upload fehlgeschlagen (${error.message}), versuche Base64-JSON-Fallback...`);
+    }
+  }
+
+  const base64Data = fs.readFileSync(filePath).toString('base64');
+  console.log(`📤 Lade Datei hoch (base64 JSON): ${filePath}...`);
   const body = {
-    data: `data:application/octet-stream;base64,${base64Data}`,
+    data: `data:${mimeTypeFor(filePath)};base64,${base64Data}`,
     tags: tags || undefined,
   };
 
@@ -788,59 +895,87 @@ function showHelp() {
 Verwendung:
   node pollinations-client.mjs <command> [options]
 
-Core Generation Commands:
-  text               📝 Simple Text Generation GET (/text/{prompt})
-  text-post          📝 Simple Text Generation POST (/text)
-  chat               💬 Chat Completion OpenAI-style (/v1/chat/completions)
-  image              🖼️ Bild generieren GET (/image/{prompt})
-  image-v1           🖼️ Bild generieren OpenAI-style (/v1/images/generations)
-  image-edit         ✏️ Bild bearbeiten (/v1/images/edits)
-  video              🎬 Video generieren GET (/video/{prompt})
-  3d                 📦 3D Objekt generieren GET (/3d/{prompt})
-  audio              🎵 Audio/Speech generieren GET (/audio/{text})
-  speech             🎤 TTS Audio generieren (/v1/audio/speech)
+Global options (every command):
+  --apiKey <key>     Credential überschreiben (sonst .env / Umgebung)
+  --base <url>       API-Basis überschreiben (Default https://gen.pollinations.ai)
+  --safe <spec>      Safe-Mode; ersetzt den Default (nsfw: true), z. B. --safe true
+  --body <json|@f>   JSON-Body für POST-Commands (restliche --flags mergen hinein)
+
+Generation:
+  text               📝 Simple Text GET (/text/{prompt})
+  text-post          📝 Simple Text POST (/text)
+  chat               💬 Chat Completion (/v1/chat/completions)
+  image              🖼️ Bild GET (/image/{prompt})
+  image-v1           🖼️ Bild OpenAI-style POST (/v1/images/generations)
+  image-edit         ✏️ Bild bearbeiten POST (/v1/images/edits)
+  video              🎬 Video GET (/video/{prompt})
+  3d                 📦 3D GET (/3d/{prompt})
+  3d-post            📦 3D POST (/3d/{prompt})
+  audio              🎵 Audio/Speech GET (/audio/{text})
+  speech             🎤 TTS POST (/v1/audio/speech)
   speech-timestamps  ⏱️ TTS mit Wort-Zeitstempeln (/v1/audio/speech/with-timestamps)
   voice-changer      🎙️ Voice Changer (/v1/audio/voice-changer)
   voice-isolator     🎤 Voice Isolator (/v1/audio/voice-isolator)
-  transcribe         📝 Audio transkribieren (/v1/audio/transcriptions) (--file <pfad> [--model] [--out <txt>] [--diarize] [--responseFormat <fmt>] [--json])
-  transcribe-album   🎧 Alle Audios eines Ordners in .txt (/v1/audio/transcriptions) (--dir <ordner> [--model] [--out <ordner>])
+  transcribe         📝 Audio transkribieren (--file <pfad> [--model] [--out <txt>] [--diarize] [--responseFormat <fmt>] [--json])
+  transcribe-album   🎧 Alle Audios eines Ordners in .txt (--dir <ordner> [--model] [--out <ordner>])
+  transcriptions     📝 Transkription JSON-Body (/v1/audio/transcriptions)
   embeddings         🔢 Vector Embeddings (/v1/embeddings)
 
-Media & Storage Commands:
-  upload-media       📤 Datei hochladen (/upload)
-  gallery            🖼️ Tag-Galerie abrufen (/media?tag=...)
-  media-item         🖼️ Media Item Info (/media/{id})
-  storage-item       📦 Storage Item Info (/{id})
-  storage-meta       🏷️ Storage Item Metadaten (/{id}/metadata)
+Media & Storage:
+  upload-media       📤 Datei hochladen (/upload) (--file <pfad> [--tags a,b] [--json true])
+  gallery            🖼️ Tag-Galerie (/media?tag=…) (--tag <t> [--limit N] [--cursor c])
+  media-item <id>    🖼️ Media Item Info (/media/{id})
+  storage-item <id>  📦 Storage Item Info (/{id})
+  storage-meta <id>  🏷️ Storage Metadaten (/{id}/metadata)
 
-Account & Keys Commands:
-  account-profile    👤 Account-Profil (/account/profile)
-  account-balance    💰 Kontostand / Credits (/account/balance)
-  account-usage      📊 Verbrauchshistorie (/account/usage)
+Account & Keys:
+  account-profile    👤 Profil (/account/profile)
+  account-balance    💰 Kontostand (/account/balance)
+  account-usage      📊 Verbrauch (/account/usage)
   account-daily      📅 Tägliche Historie (/account/usage/daily)
   account-quests     📜 User Quests (/account/quests)
   quests-catalog     📖 Quests Katalog (/quests/catalog)
-  earnings           💎 Developer Earnings (/account/earnings)
+  earnings           💎 Earnings (/account/earnings)
+  earnings-transactions  💸 Earnings-Transaktionen (/account/earnings/transactions)
   keys               🔑 API Keys auflisten (/account/keys)
-  key-create         🔑 Neuen API Key erstellen (/account/keys)
-  key-info           🔑 API Key Details (/account/keys/{id})
-  key-delete         🗑️ API Key löschen (/account/keys/{id})
+  key-create         🔑 API Key erstellen (/account/keys)
+  key-info <id>      🔑 Key-Details (/account/keys/{id})
+  key-delete <id>    🗑️ Key löschen (/account/keys/{id})
+  key-usage          📊 Key-Verbrauch (/account/key/usage)
+  key-current        🔑 Aktueller Key (/account/key)
 
-Models & Realtime Commands:
-  models             📋 Alle System-Modelle (/models)
+Agents & Custom Models:
+  agents             🤖 Agents (/account/agents)
+  agent-create       🤖 Agent erstellen (--body '{...}')
+  agent-info <id>    🤖 Agent Info (/account/agents/{id})
+  my-models          🎨 Eigene Custom Models (/account/my-models)
+  my-model-create    🎨 Custom Model registrieren (--body '{...}')
+  my-model-info <id> 🎨 Custom Model Info (/account/my-models/{id})
+  my-model-update <id>  🎨 Model aktualisieren (--body '{...}')
+  my-model-delete <id>  🗑️ Model löschen (/account/my-models/{id})
+  my-model-fallback <id>  🔄 Fallback-Kandidaten
+  my-model-endpoints 🤖 Endpoint-Agents
+  my-model-test      🧪 Model-Konfiguration testen
+  my-models-provider 🏢 Provider-Settings
+  my-models-base     📋 Verfügbare Base-Models
+
+Models & Realtime:
+  models             📋 Alle Modelle (/models)
   v1-models          📋 OpenAI Modelle (/v1/models)
-  models-status      ⚡ Live Status aller Modelle (/v1/models/status)
-  text-models        📝 Text-Modelle (/text/models)
-  image-models       🖼️ Bild-Modelle (/image/models)
-  video-models       🎬 Video-Modelle (/video/models)
-  audio-models       🎵 Audio-Modelle (/audio/models)
-  realtime           ⚡ Realtime Config (/realtime)
+  v1-model <id>      📋 Model-Details (/v1/models/{model})
+  models-status      ⚡ Live-Status (/v1/models/status)
+  text-models        📝 (/text/models)   image-models  🖼️ (/image/models)
+  video-models       🎬 (/video/models)  audio-models  🎵 (/audio/models)
+  3d-models          📦 (/3d/models)     embeddings-models 🔢 (/embeddings/models)
+  realtime           ⚡ (/realtime)       v1-realtime   ⚡ (/v1/realtime)
 
 Examples:
   node pollinations-client.mjs text --prompt "Erkläre Quantencomputing in 2 Sätzen"
+  node pollinations-client.mjs chat --body '{"model":"openai","messages":[{"role":"user","content":"Hi"}]}'
   node pollinations-client.mjs image --prompt "Futuristic Cyberpunk Neon Cathedral" --model "zimage"
+  node pollinations-client.mjs video --prompt "Neon city flythrough" --model "wan-fast" --duration 5
   node pollinations-client.mjs speech --input "Willkommen bei Echo Forge!" --voice "liora"
-  node pollinations-client.mjs account-profile
+  node pollinations-client.mjs upload-media --file ./cat.png --tags demo
   node pollinations-client.mjs models-status
 `);
 }
@@ -862,8 +997,74 @@ function parseArgs() {
   return { command, options, rawArgs: args };
 }
 
+/**
+ * Build a JSON request body from CLI options.
+ *
+ * `--body '<json>'` (or `--body @file.json`) seeds the body; every other
+ * `--key value` flag then overrides/extends it. `--body` wins over a scalar of
+ * the same name, so `--body '{"stream":true}'` cannot be clobbered by a stray
+ * `--stream` flag. Scaffolding flags (`apiKey`, `base`, `safe`, `out`, …) are
+ * never sent upstream.
+ */
+/** Flags that configure the client itself and must never reach the API. */
+const GLOBAL_OPTIONS = new Set(['body', 'id', 'apiKey', 'base', 'safe']);
+
+/** Local-file / output plumbing that belongs to no request body. */
+const SCAFFOLDING_OPTIONS = new Set([
+  ...GLOBAL_OPTIONS,
+  'out',
+  'outFile',
+  'filePath',
+  'file',
+  'dir',
+  'input',
+  'responseFormat',
+]);
+
+/** Query-string view of the CLI options, with client-only flags removed. */
+function queryFromOptions(options = {}) {
+  const query = {};
+  for (const [key, value] of Object.entries(options)) {
+    if (GLOBAL_OPTIONS.has(key)) continue;
+    query[key] = value === true ? 'true' : String(value);
+  }
+  return query;
+}
+
+/** Accepts both `--out` and `--outFile` for the generators' target path. */
+function withOutFile(options = {}) {
+  return { ...options, outFile: options.outFile || options.out }
+}
+
+function bodyFromOptions(options = {}) {
+  let base = {};
+  if (typeof options.body === 'string') {
+    const source = options.body.startsWith('@')
+      ? fs.readFileSync(options.body.slice(1), 'utf-8')
+      : options.body;
+    base = JSON.parse(source);
+  }
+  const body = { ...base };
+  for (const [key, value] of Object.entries(options)) {
+    if (SCAFFOLDING_OPTIONS.has(key)) continue;
+    if (key in base) continue;
+    body[key] = value === true ? true : value;
+  }
+  return body;
+}
+
 async function main() {
   const { command, options, rawArgs } = parseArgs();
+
+  // Global overrides, applied before any command runs:
+  //   --apiKey <key>   override the .env / environment credential
+  //   --base <url>     point at a mirror (default https://gen.pollinations.ai)
+  //   --safe <spec>    replace the Safe-Mode default with the `safe` header
+  if (typeof options.apiKey === 'string') API_KEY = options.apiKey;
+  if (typeof options.base === 'string') API_BASE = options.base;
+  if (options.safe !== undefined) {
+    SAFE_MODE = options.safe === true ? 'true' : String(options.safe);
+  }
 
   try {
     switch (command) {
@@ -872,40 +1073,43 @@ async function main() {
         await simpleTextGenerate(options);
         break;
       case 'text-post':
-        await simpleTextPost(options);
+        await simpleTextPost(bodyFromOptions(options));
         break;
       case 'chat':
-        await chatCompletions(options);
+        await chatCompletions(bodyFromOptions(options));
         break;
       case 'image':
-        await generateImageGet(options);
+        await generateImageGet(withOutFile(options));
         break;
       case 'image-v1':
-        await generateImagesV1(options);
+        await generateImagesV1(bodyFromOptions(options));
         break;
       case 'image-edit':
-        await editImagesV1(options);
+        await editImagesV1(bodyFromOptions(options));
         break;
       case 'video':
-        await generateVideoGet(options);
+        await generateVideoGet(withOutFile(options));
         break;
       case '3d':
-        await generate3DGet(options);
+        await generate3DGet(withOutFile(options));
+        break;
+      case '3d-post':
+        await generate3DPost(withOutFile(options));
         break;
       case 'audio':
-        await generateAudioGet(options);
+        await generateAudioGet(withOutFile(options));
         break;
       case 'speech':
-        await generateSpeechV1(options);
+        await generateSpeechV1(bodyFromOptions(options), options.out || options.outFile);
         break;
       case 'speech-timestamps':
-        await generateSpeechWithTimestampsV1(options);
+        await generateSpeechWithTimestampsV1(bodyFromOptions(options));
         break;
       case 'voice-changer':
-        await voiceChangerV1(options);
+        await voiceChangerV1(bodyFromOptions(options));
         break;
       case 'voice-isolator':
-        await voiceIsolatorV1(options);
+        await voiceIsolatorV1(bodyFromOptions(options));
         break;
       case 'transcribe':
         await transcribeCommand(options);
@@ -914,12 +1118,17 @@ async function main() {
         await transcribeAlbumCommand(options);
         break;
       case 'embeddings':
-        await createEmbeddingsV1(options);
+        await createEmbeddingsV1(bodyFromOptions(options));
+        break;
+      case 'transcriptions':
+        await audioTranscriptionsV1(options);
         break;
 
       // ── Media & Storage ──
       case 'upload-media':
-        await uploadMediaFile(options.filePath || options.file, options.tags);
+        await uploadMediaFile(options.filePath || options.file, options.tags, {
+          multipart: options.json !== true,
+        });
         break;
       case 'gallery':
         await listMediaGallery(options.tag, options.limit, options.cursor);
@@ -942,10 +1151,10 @@ async function main() {
         await getAccountBalance();
         break;
       case 'account-usage':
-        await getAccountUsage(options);
+        await getAccountUsage(queryFromOptions(options));
         break;
       case 'account-daily':
-        await getAccountUsageDaily(options);
+        await getAccountUsageDaily(queryFromOptions(options));
         break;
       case 'account-quests':
         await getAccountQuests();
@@ -956,11 +1165,14 @@ async function main() {
       case 'earnings':
         await getAccountEarnings();
         break;
+      case 'earnings-transactions':
+        await getAccountEarningsTransactions(queryFromOptions(options));
+        break;
       case 'keys':
         await listApiKeys();
         break;
       case 'key-create':
-        await createApiKey(options);
+        await createApiKey(bodyFromOptions(options));
         break;
       case 'key-info':
         await getApiKey(rawArgs[1] || options.id);
@@ -969,15 +1181,45 @@ async function main() {
         await deleteApiKey(rawArgs[1] || options.id);
         break;
       case 'key-usage':
-        await getAccountKeyUsage(options);
+        await getAccountKeyUsage(queryFromOptions(options));
+        break;
+      case 'key-current':
+        await getAccountKey();
         break;
 
       // ── Agents & Custom Models ──
       case 'agents':
         await listAgents();
         break;
+      case 'agent-create':
+        await createAgent(bodyFromOptions(options));
+        break;
+      case 'agent-info':
+        await getAgent(rawArgs[1] || options.id);
+        break;
       case 'my-models':
         await listMyModels();
+        break;
+      case 'my-model-create':
+        await createMyModel(bodyFromOptions(options));
+        break;
+      case 'my-model-info':
+        await getMyModel(rawArgs[1] || options.id);
+        break;
+      case 'my-model-update':
+        await updateMyModel(rawArgs[1] || options.id, bodyFromOptions(options));
+        break;
+      case 'my-model-delete':
+        await deleteMyModel(rawArgs[1] || options.id);
+        break;
+      case 'my-model-fallback':
+        await getMyModelFallbackCandidates(rawArgs[1] || options.id);
+        break;
+      case 'my-model-endpoints':
+        await getMyModelsEndpointAgents();
+        break;
+      case 'my-model-test':
+        await testMyModel(bodyFromOptions(options));
         break;
       case 'my-models-provider':
         await getMyModelsProvider();
@@ -992,6 +1234,9 @@ async function main() {
         break;
       case 'v1-models':
         await listV1Models();
+        break;
+      case 'v1-model':
+        await getV1Model(rawArgs[1] || options.model);
         break;
       case 'models-status':
         await getV1ModelsStatus();
@@ -1016,6 +1261,9 @@ async function main() {
         break;
       case 'realtime':
         await getRealtimeConfig();
+        break;
+      case 'v1-realtime':
+        await getV1RealtimeConfig();
         break;
 
       case 'help':
