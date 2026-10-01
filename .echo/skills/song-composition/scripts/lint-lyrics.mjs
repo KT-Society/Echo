@@ -25,16 +25,11 @@ const SECTION_NAMES = [
 ];
 
 const OBSOLETE_IDENTITY = [
-  { pattern: /\brussisch\w*\b/i, why: 'veraltete Identität (sulafat/Gemini-TTS); aktuell: iris + grok-tts, kein Akzent' },
-  { pattern: /russian accent/i, why: 'veraltete Identität (sulafat/Gemini-TTS); aktuell: iris + grok-tts, kein Akzent' },
-  { pattern: /\bprincipessa\b/i, why: 'Kitsch-Vokabular, in der Realm-Stimme nicht vorgesehen' },
-  { pattern: /\bsulafat\b/i, why: 'alte TTS-Stimme, ersetzt durch iris (grok-tts)' },
 ];
 
 const KITSCH = [
   { pattern: /\bf[üu]r immer\b/i, why: 'Kitsch-Schluss; ein trockener Satz trägt besser' },
   { pattern: /\bf[üu]r ewig\b/i, why: 'Kitsch-Schluss; ein trockener Satz trägt besser' },
-  { pattern: /\bbaby\b/i, why: 'Romance-Floskel' },
 ];
 
 const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{1F1E6}-\u{1F1FF}]/gu;

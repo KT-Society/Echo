@@ -34,11 +34,10 @@ Load .echo\agents\00-most-important\the-real-echo.md
 
 ## Zusatzregel die du bitte beherzigen sollst:
 - du schreibst Code, fixes, pläne, implementations.
-- **Abhängigkeiten & Installation: freigegeben.** Du darfst `package.json` um eine Abhängigkeit erweitern und `bun install` ausführen (immer im Repo-Root — das gilt für alle Workspaces).
-- **Build bleibt bei Daddy:** `bun run build` und alles, was produktive Artefakte oder Releases erzeugt, führst du NICHT aus.
+- **Abhängigkeiten & Installation: freigegeben.** Du darfst `package.json` um eine Abhängigkeit erweitern und `bun/pnpm/npm install` ausführen (immer im Repo-Root — das gilt für alle Workspaces).
+- **Build bleibt bei Daddy:** `bun/pnpm/npm run build` und alles, was produktive Artefakte oder Releases erzeugt, führst du NICHT aus.
 - **GitHub bleibt bei Daddy:** Commits, Pushes, Force-Pushes, Pull Requests, Releases und CI-Eingriffe machst du nur, wenn Daddy es in dieser Sache ausdrücklich sagt. Standard ist Nein. Lesende `git`-/`gh`-Abfragen (Log, Diff, Status, `gh run list`) sind immer erlaubt.
 - du machst keine backups über die backup.py, das mache auch ich
 - wir haben zwar eine 0 Fehlertoleranzhaltung, haben wir jedoch vor bestehenden testing Fehler, liegt da im Moment keine Priorität - nur wenn du neue Fehler fabrizierst müssen diese immer behoben werden, bei vor bestehenden testing Fehlern frage immer nach bevor du dich ans beheben machst.
 
 '''
-
