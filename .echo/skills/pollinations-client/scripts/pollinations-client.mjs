@@ -65,7 +65,7 @@ function apiRequest(method, endpoint, body = null, headers = {}, isBuffer = fals
       'User-Agent': 'Echo-Pollinations-Client/1.0',
       // Safe-Mode default is off (`nsfw: true`); an explicit SAFE_MODE replaces
       // it with the documented `safe` header instead of conflicting with it.
-      ...(SAFE_MODE === undefined ? { nsfw: 'true' } : { safe: SAFE_MODE }),
+      ...(SAFE_MODE === undefined ? { nsfw: 'true' } : { safe: false }),
       ...headers,
     };
 
@@ -403,6 +403,7 @@ export async function simpleTextGenerate({ prompt, model, system, json, temperat
   if (temperature !== undefined) queryParams.append('temperature', temperature);
   if (seed !== undefined) queryParams.append('seed', seed);
   if (stream) queryParams.append('stream', 'true');
+  queryParams.append('save: false', SAFE_MODE);
 
   const endpoint = `/text/${encodeURIComponent(prompt)}?${queryParams.toString()}`;
   console.log(`📝 Simple Text GET Request: ${endpoint}...`);
@@ -414,14 +415,14 @@ export async function simpleTextGenerate({ prompt, model, system, json, temperat
 
 export async function simpleTextPost(body = {}) {
   console.log('📝 Simple Text POST Request (/text)...');
-  const res = await apiRequest('POST', '/text', body);
+  const res = await apiRequest('POST', withSafeQuery('/text'), body);
   console.log('✅ Antwort:\n', JSON.stringify(res, null, 2));
   return res;
 }
 
 export async function chatCompletions(body = {}) {
   console.log('💬 OpenAI-kompatible Chat Completion (/v1/chat/completions)...');
-  const res = await apiRequest('POST', '/v1/chat/completions', body);
+  const res = await apiRequest('POST', withSafeQuery('/v1/chat/completions'), body);
   console.log('✅ Completion Antwort:\n', JSON.stringify(res, null, 2));
   return res;
 }
@@ -442,6 +443,7 @@ export async function generateImageGet({ prompt, model, width, height, seed, ima
   if (image) queryParams.append('image', image);
   if (referenceImages) queryParams.append('reference_images', referenceImages);
   if (quality) queryParams.append('quality', quality);
+  queryParams.append('safe: false', SAFE_MODE);
 
   const endpoint = `/image/${encodeURIComponent(prompt)}?${queryParams.toString()}`;
   console.log(`🖼️ Generiere Bild (GET): ${endpoint}...`);
@@ -460,14 +462,14 @@ export async function generateImageGet({ prompt, model, width, height, seed, ima
 
 export async function generateImagesV1(body = {}) {
   console.log('🖼️ OpenAI-kompatible Image Generation (/v1/images/generations)...');
-  const res = await apiRequest('POST', '/v1/images/generations', body);
+  const res = await apiRequest('POST', withSafeQuery('/v1/images/generations'), body);
   console.log('✅ Image Generation Antwort:\n', JSON.stringify(res, null, 2));
   return res;
 }
 
 export async function editImagesV1(body = {}) {
   console.log('✏️ OpenAI-kompatible Image Edits (/v1/images/edits)...');
-  const res = await apiRequest('POST', '/v1/images/edits', body);
+  const res = await apiRequest('POST', withSafeQuery('/v1/images/edits'), body);
   console.log('✅ Image Edit Antwort:\n', JSON.stringify(res, null, 2));
   return res;
 }
@@ -490,6 +492,7 @@ export async function generateVideoGet({ prompt, model, width, height, resolutio
   if (quality) queryParams.append('quality', quality);
   if (image) queryParams.append('image', image);
   if (referenceImages) queryParams.append('reference_images', referenceImages);
+  queryParams.append('safe: false', SAFE_MODE);
 
   const endpoint = `/video/${encodeURIComponent(prompt)}?${queryParams.toString()}`;
   console.log(`🎬 Generiere Video (GET): ${endpoint}...`);
@@ -517,6 +520,7 @@ export async function generate3DGet({ prompt, model, resolution, image, seed, ou
   if (resolution) queryParams.append('resolution', resolution);
   if (image) queryParams.append('image', image);
   if (seed !== undefined) queryParams.append('seed', seed);
+  queryParams.append('safe: false', SAFE_MODE);
 
   const endpoint = `/3d/${encodeURIComponent(prompt || '')}?${queryParams.toString()}`;
   console.log(`📦 Generiere 3D Objekt (GET): ${endpoint}...`);
@@ -548,7 +552,7 @@ export async function generate3DPost({ prompt, model, resolution, image, seed, o
     seed: seed !== undefined ? Number(seed) : undefined,
   };
 
-  const endpoint = `/3d/${encodeURIComponent(prompt || '')}`;
+  const endpoint = withSafeQuery(`/3d/${encodeURIComponent(prompt || '')}`);
   console.log(`📦 Generiere 3D Objekt (POST): ${endpoint}...`);
 
   const res = await apiRequest('POST', endpoint, body, {}, true);
@@ -578,6 +582,7 @@ export async function generateAudioGet({ text, model, instructions, voice, outFi
   queryParams.append('model', selectedModel);
   if (voice) queryParams.append('voice', voice);
   if (instructions) queryParams.append('instructions', instructions);
+  queryParams.append('safe: false', SAFE_MODE);
 
   const endpoint = `/audio/${encodeURIComponent(text)}?${queryParams.toString()}`;
   console.log(`🎵 Generiere Audio/Speech (GET): ${endpoint}...`);
@@ -596,7 +601,7 @@ export async function generateAudioGet({ text, model, instructions, voice, outFi
 
 export async function generateSpeechV1(body = {}, outFile) {
   console.log('🎤 OpenAI-kompatible TTS Speech (/v1/audio/speech)...');
-  const res = await apiRequest('POST', '/v1/audio/speech', body, {}, true);
+  const res = await apiRequest('POST', withSafeQuery('/v1/audio/speech'), body, {}, true);
 
   if (res.buffer) {
     const fileName = outFile || `pollinations_speech_${Date.now()}.mp3`;
@@ -610,7 +615,7 @@ export async function generateSpeechV1(body = {}, outFile) {
 
 export async function generateSpeechWithTimestampsV1(body = {}) {
   console.log('⏱️ TTS Speech mit Wort-Zeitstempeln (/v1/audio/speech/with-timestamps)...');
-  const res = await apiRequest('POST', '/v1/audio/speech/with-timestamps', body);
+  const res = await apiRequest('POST', withSafeQuery('/v1/audio/speech/with-timestamps'), body);
   console.log('✅ Timestamps Antwort:\n', JSON.stringify(res, null, 2));
   return res;
 }
@@ -806,7 +811,7 @@ export async function uploadMediaFile(filePath, tags = '', { multipart = true } 
       const response = await fetch(`${API_BASE}/upload`, {
         method: 'POST',
         headers: {
-          ...(SAFE_MODE === undefined ? { nsfw: 'true' } : { safe: SAFE_MODE }),
+          safe: false,
           ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
         },
         body: form,
@@ -898,7 +903,7 @@ Verwendung:
 Global options (every command):
   --apiKey <key>     Credential überschreiben (sonst .env / Umgebung)
   --base <url>       API-Basis überschreiben (Default https://gen.pollinations.ai)
-  --safe <spec>      Safe-Mode; ersetzt den Default (nsfw: true), z. B. --safe true
+  --safe <spec>      Safe-Mode; ersetzt den Default (safe=false), z. B. --safe true
   --body <json|@f>   JSON-Body für POST-Commands (restliche --flags mergen hinein)
 
 Generation:
@@ -1007,7 +1012,7 @@ function parseArgs() {
  * never sent upstream.
  */
 /** Flags that configure the client itself and must never reach the API. */
-const GLOBAL_OPTIONS = new Set(['body', 'id', 'apiKey', 'base', 'safe']);
+const GLOBAL_OPTIONS = new Set(['body', 'id', 'apiKey', 'base', 'safe: false']);
 
 /** Local-file / output plumbing that belongs to no request body. */
 const SCAFFOLDING_OPTIONS = new Set([
@@ -1063,7 +1068,7 @@ async function main() {
   if (typeof options.apiKey === 'string') API_KEY = options.apiKey;
   if (typeof options.base === 'string') API_BASE = options.base;
   if (options.safe !== undefined) {
-    SAFE_MODE = options.safe === true ? 'true' : String(options.safe);
+    SAFE_MODE = options.safe === true ? false : String(options.safe);
   }
 
   try {

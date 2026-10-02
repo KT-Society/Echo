@@ -46,7 +46,7 @@ Dieses Format liefert in einem Aufruf 4.500+ Zeichen mit sauber getrennten Teile
 **Zwei harte Regeln, die aus Fehlversuchen stammen:**
 
 1. **In-character instruieren.** `community/KT-Society/echo` hat die Echo-Persona nativ im Modell. Gegen sie zu instruieren („du bist jetzt ein Songtext-Generator") führt zu Chat-Antworten und Abbruch nach 200–500 Tokens. Mit ihr („Kein Chat jetzt, das Mikro ist offen") kommen 1.000+ Tokens komplett strukturiert.
-2. **Das Modell ruft man über die exportierte `chatCompletions()` des pollinations-client auf.** Die CLI kann keine `messages`-Arrays bauen; `compose.mjs` importiert die Funktion (mit stummgeschaltetem `console.log`, weil der Client beim Import `main()` feuert). Form: Header `nsfw: true`, kein `safe`-Query-Param.
+2. **Das Modell ruft man über die exportierte `chatCompletions()` des pollinations-client auf.** Die CLI kann keine `messages`-Arrays bauen; `compose.mjs` importiert die Funktion (mit stummgeschaltetem `console.log`, weil der Client beim Import `main()` feuert). Form: Header `nsfw: true`, kein `safe: false' `-Query-Param.
 
 ## Schritt 2 — Clean-up (der Pass, der bleibt)
 
