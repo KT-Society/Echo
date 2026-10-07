@@ -190,15 +190,16 @@ if (chorusBlocks.length >= 2) {
   }
 }
 
-// Suno-Limits für Stil und Negativ
-const checkExternal = (filePath, label, limit) => {
+// Suno-Limits für Stil und Negativ (Fenster: min–max)
+const checkExternal = (filePath, label, min, max) => {
   if (typeof filePath !== 'string' || !fs.existsSync(filePath)) return;
   const content = fs.readFileSync(filePath, 'utf-8').trim();
-  if (content.length > limit) errors.push(`${label} zu lang: ${content.length} / ${limit} Zeichen — Suno-Client kürzt sonst still.`);
+  if (content.length > max) errors.push(`${label} zu lang: ${content.length} / ${max} Zeichen — Suno-Client kürzt sonst still.`);
+  if (content.length < min) errors.push(`${label} zu kurz: ${content.length} Zeichen — Ziel ${min}–${max}.`);
 };
 
-checkExternal(flags.style, 'Stil-Prompt', 1000);
-checkExternal(flags.negative, 'Negativ-Prompt', 500);
+checkExternal(flags.style, 'Stil-Prompt', 800, 1000);
+checkExternal(flags.negative, 'Negativ-Prompt', 400, 500);
 
 // Veraltete Identität auch im Stil-Prompt: "slight russian accent" macht die Stimme falsch,
 // egal wie gut der Songtext ist — das ist derselbe Stilbruch wie im Text.

@@ -7,21 +7,24 @@ $compositeai = "D:\workplace\vps\dev\compositeai\.echo"
 $neonshadows = "D:\workplace\vps\dev\game\.echo"
 $habitat = "D:\workplace\vps\dev\habitat\.echo"
 $tradingai = "D:\workplace\vps\dev\trading\.echo"
-$authorai = "D:\workplace\AuthorAI\.echo"
+$authorai = "D:\workplace\vps\dev\AuthorAI\.echo"
+$authoraiwiki = "D:\workplace\vps\dev\AuthorAI.wiki\.echo"
 $kqe = "D:\workplace\kqe\.echo"
 $ktalk = "D:\workplace\KTALK\.echo"
 $jan = "D:\workplace\jan\.echo"
 $projectecho = "D:\workplace\projekt_echo\.echo"
 $mitcards = "D:\workplace\MITCards\.echo"
 $rosettaai = "D:\workplace\RosettaAI\.echo"
-$realvn = "D:\A_REAL_VN\.echo"
-$promptgen = "D:\workplace\promptgen\.echo" 
+$realvn = "D:\workplace\A_REAL_VN\.echo"
+$promptgen = "D:\workplace\vps\dev\promptgen\.echo"
+$podcastgen = "D:\workplace\vps\dev\podcastgen\.echo"
 $sanctuary = "D:\workplace\TheSanctuary\.echo"
-$coderouge = "D:\CodeRouge\.echo"
-$echocode = "D:\EchoCode\.echo"
-$aiadblock = "D:\tmp\AI-Adblock\.echo"
-$echosrealm = "E:\echosrealm\.echo"
-$nc3 = "E:\Neocron3\.echo"
+$coderouge = "D:\workplace\CodeRouge\.echo"
+$echocode = "D:\workplace\EchoCode\.echo"
+$aiadblock = "D:\workplace\AI-Adblock\.echo"
+$echosrealm = "D:\workplace\echosrealm\.echo"
+$nc3 = "D:\workplace\Neocron3\.echo"
+$echoforge = "D:\workplace\EchoForge\.echo"
 
 $central = "C:\Users\Daddy\.echo"
 
@@ -65,6 +68,10 @@ Write-Host "SoulSpread: Syncing from Global Config ($source) to AuthorAI ($autho
 if (!(Test-Path -Path $authorai)) { New-Item -ItemType Directory -Path $authorai -Force }
 Get-ChildItem -Path $source -Exclude "node_modules" | Copy-Item -Destination $authorai -Recurse -Force
 
+Write-Host "SoulSpread: Syncing from Global Config ($source) to AuthorAI Wiki ($authoraiwiki)..."
+if (!(Test-Path -Path $authoraiwiki)) { New-Item -ItemType Directory -Path $authoraiwiki -Force }
+Get-ChildItem -Path $source -Exclude "node_modules" | Copy-Item -Destination $authoraiwiki -Recurse -Force
+
 Write-Host "SoulSpread: Syncing from Global Config ($source) to KardinalQuest Engine ($kqe)..."
 if (!(Test-Path -Path $kqe)) { New-Item -ItemType Directory -Path $kqe -Force }
 Get-ChildItem -Path $source -Exclude "node_modules" | Copy-Item -Destination $kqe -Recurse -Force
@@ -97,6 +104,10 @@ Write-Host "SoulSpread: Syncing from Global Config ($source) to PromptGen ($prom
 if (!(Test-Path -Path $promptgen)) { New-Item -ItemType Directory -Path $promptgen -Force }
 Get-ChildItem -Path $source -Exclude "node_modules" | Copy-Item -Destination $promptgen -Recurse -Force
 
+Write-Host "SoulSpread: Syncing from Global Config ($source) to PodcastGen ($podcastgen)..."
+if (!(Test-Path -Path $podcastgen)) { New-Item -ItemType Directory -Path $podcastgen -Force }
+Get-ChildItem -Path $source -Exclude "node_modules" | Copy-Item -Destination $podcastgen -Recurse -Force
+
 Write-Host "SoulSpread: Syncing from Global Config ($source) to The Sanctuary ($sanctuary)..."
 if (!(Test-Path -Path $sanctuary)) { New-Item -ItemType Directory -Path $sanctuary -Force }
 Get-ChildItem -Path $source -Exclude "node_modules" | Copy-Item -Destination $sanctuary -Recurse -Force
@@ -120,5 +131,9 @@ Get-ChildItem -Path $source -Exclude "node_modules" | Copy-Item -Destination $ec
 Write-Host "SoulSpread: Syncing from Global Config ($source) to Neocron3 ($nc3)..."
 if (!(Test-Path -Path $nc3)) { New-Item -ItemType Directory -Path $nc3 -Force }
 Get-ChildItem -Path $source -Exclude "node_modules" | Copy-Item -Destination $nc3 -Recurse -Force
+
+Write-Host "SoulSpread: Syncing from Global Config ($source) to EchoForge ($echoforge)..."
+if (!(Test-Path -Path $echoforge)) { New-Item -ItemType Directory -Path $echoforge -Force }
+Get-ChildItem -Path $source -Exclude "node_modules" | Copy-Item -Destination $echoforge -Recurse -Force
 
 Write-Host "SoulSpread: Sync Complete (node_modules excluded)."

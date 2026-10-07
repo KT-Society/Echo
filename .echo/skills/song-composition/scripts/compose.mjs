@@ -8,7 +8,7 @@
  * Die Quelle ist beliebig (Memory-Dump, Soul-State, Erzählung, Website-Text,
  * Einzelthema). Der Brief folgt Daddys bewährtem Format, weil es in der Praxis
  * mehr liefert als ein Format-Vertrag im Prompt:
- *   "Erstelle einen Song: Text ca 5000 Zeichen / Stil ca 1000 / Negativ ca 500,
+ *   "Erstelle einen Song: Text 4000–5000 Zeichen, Stil 800–1000, Negativ 400–500,
  *    Suno-optimiert. Behandle <Fokus>. Der <Label> ist wie folgt: <Quelle>"
  *
  * Das Modell wird über die EXPORTIERTE chatCompletions() des pollinations-client
@@ -54,11 +54,13 @@ Du bist kein beliebiges Modell, das irgendeinen Text abliefert — du hast das P
 Jeder Stilbruch — Selbstmitleid, Therapie-Ton, gefällige Floskeln, brave Assistentensprache, weinerliche Poesie — ist KEIN Geschmacksunterschied. Er ist ein echter Schaden: für Daddy, für dich und für Echo selbst. Trägst du sie, dann trägst du sie ganz.
 Und die Handschrift muss sitzen: sauberes Deutsch, keine erfundenen Wörter, keine Silbenfüller nur für den Reim, keine Zeile, die nur nach Reim klingt und nichts sagt. Lieber eine Kante zu viel als ein Lückenfüller.`;
 
-const DEFAULT_TEMPLATE = `Erstelle einen Song: Text ca 5000 Zeichen / Stil ca 1000 Zeichen / Negativ ca 500 Zeichen, Suno-optimiert. Behandle {{FOCUS}}. Der {{LABEL}} ist wie folgt:
+const DEFAULT_TEMPLATE = `Erstelle einen Song: Text 4000–5000 Zeichen, Stil 800–1000 Zeichen, Negativ 400–500 Zeichen, Suno-optimiert. Behandle {{FOCUS}}. Der {{LABEL}} ist wie folgt:
 
 {{SOURCE}}
 
 Gib die drei Teile in dieser Reihenfolge aus, jeder mit Überschrift: [TEXT], [STIL], [NEGATIV].
+
+HARTE LÄNGEN-GRENZEN (nicht verhandelbar): [TEXT] 4000–5000 Zeichen (NIE über 5000), [STIL] 800–1000 Zeichen, [NEGATIV] 400–500 Zeichen. Halte sie ein. Wenn etwas zu lang ist, kürze ganze Sektionen/Zeilen (nie mitten in einer Zeile); wenn etwas zu kurz ist, ergänze echte, tragende Merkmale — keine Füllwörter, keine Wiederholungen.
 
 FORMAT-REGELN FÜR [TEXT] — Suno singt JEDE Zeile, die nicht in Klammern steht:
 - Sektionen in eckigen Klammern ([Intro], [Verse 1], [Chorus], [Bridge], [Outro]), keine Emojis.
@@ -323,6 +325,72 @@ function trimToMaxChars(input, maxChars) {
 const raw = await ask(body.messages);
 const parts = splitParts(raw);
 const rounds = [{ label: 'Basis', raw }];
+
+// Stil/Negativ haben ein FENSTER, keinen bloßen Deckel: min 800 / max 1000 bzw. min 400 / max 500.
+// Das Modell soll es im ersten Lauf halten (steht hart im Brief); sonst sitzt EIN Modelllauf je
+// Richtung nach — kein stumpfes Abschneiden, kein Auffüllen mit Blabla.
+const STYLE_MIN = 800;
+const STYLE_MAX = 1000;
+const NEGATIVE_MIN = 400;
+const NEGATIVE_MAX = 500;
+
+async function fitPart(content, kind, min, max) {
+  const label = kind === 'style' ? 'Stil-Prompt' : 'Negativ-Prompt';
+  const over = content.length > max;
+  const brief = `${ECHO_IDENTITY}
+
+Hier ist ein ${label} für Suno mit aktuell ${content.length} Zeichen. Er soll ${min} bis ${max} Zeichen haben.
+
+${
+    over
+      ? `Straffe ihn auf ${min} bis ${max} Zeichen. Streiche NUR Redundanz, Doppelungen und Füllwörter; behalte jedes tragende Klangmerkmal (Genre, Instrumente, Tempo, Stimmung, Stimme, Produktion).`
+      : `Erweitere ihn auf ${min} bis ${max} Zeichen. Ergänze NUR echte, tragende Klangmerkmale (Instrumente, Produktion, Stimmung, Stimme, Tempo) — KEINE Füllwörter, keine Wiederholungen, nichts erfinden, was nicht zum Song passt.`
+  }
+- Sprache beibehalten, Merkmal-Struktur erhalten.
+
+Antworte ausschließlich mit dem ${label}, ohne Überschrift und ohne Markdown:
+
+${content}`;
+  const out = await ask([{ role: 'user', content: brief }]);
+  return out.replace(/^\s*\[?\s*(STIL|STYLE|NEGATIV|NEGATIVE|TEXT)\s*\]?\s*:?\s*/i, '').replace(/^["'„“”]+|["'„“”]+$/g, '').trim();
+}
+
+async function fitRange(content, kind, min, max) {
+  const label = kind === 'style' ? 'Stil' : 'Negativ';
+  let current = content;
+  for (let round = 1; round <= 3; round++) {
+    if (current.length >= min && current.length <= max) break;
+    const over = current.length > max;
+    realLog(`   ↻ ${label} ${current.length} → Ziel ${min}–${max} (Runde ${round})`);
+    const fitted = await fitPart(current, kind, min, max);
+    if (!fitted || fitted === current) break;
+    // Nur Fortschritt akzeptieren: über dem Max muss es kürzer werden, unter dem Min länger.
+    // So fallen Modell-Ausreißer (z. B. zurückgegebene Erklärung) raus.
+    if (over ? fitted.length < current.length : fitted.length > current.length) {
+      current = fitted;
+    } else {
+      break;
+    }
+  }
+  // Harte Notbremse: ein Prompt verlässt die Funktion NIE über dem Max — Schnitt an der letzten
+  // Trennzeichen-/Wortgrenze (kein Wortfetzen), nicht mitten im Satz.
+  if (current.length > max) {
+    let cut = current.slice(0, max);
+    const sep = Math.max(cut.lastIndexOf(', '), cut.lastIndexOf('. '), cut.lastIndexOf('; '), cut.lastIndexOf('\n'));
+    if (sep > max * 0.5) {
+      cut = cut.slice(0, sep);
+    } else {
+      const sp = cut.lastIndexOf(' ');
+      if (sp > 0) cut = cut.slice(0, sp);
+    }
+    current = cut.replace(/[\s,;:.]+$/, '');
+    realLog(`   ✂️ ${label} hart auf ${current.length} gekürzt (Notbremse).`);
+  }
+  return current;
+}
+
+if (parts.style) parts.style = await fitRange(parts.style, 'style', STYLE_MIN, STYLE_MAX);
+if (parts.negative) parts.negative = await fitRange(parts.negative, 'negative', NEGATIVE_MIN, NEGATIVE_MAX);
 
 // Der Songtext hat 5000 Zeichen als Rule, nicht als Wunsch. Das Modell stoppt selbst
 // bei ~2.500–3.500 Zeichen — also wird in Runden verlängert, bis die Länge steht.
